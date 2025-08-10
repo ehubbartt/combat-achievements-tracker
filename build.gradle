@@ -65,7 +65,6 @@ tasks.register('shadowJar', Jar) {
     archiveFileName.set("${rootProject.name}-${project.version}-all.jar")
 }
 
-// Convenience task to build and run
 task runDev(type: JavaExec) {
     dependsOn shadowJar
     group = "runelite"
@@ -83,9 +82,15 @@ task runDev(type: JavaExec) {
             '-XX:+UseStringDeduplication',
             '-Drunelite.launcher.nojvm=true',
             '-Drunelite.developer-mode=true',
+            '-Dplugin.hub.version=do-not-load',
             '--add-exports=java.desktop/com.apple.eawt=ALL-UNNAMED',
             '--add-opens=java.desktop/com.apple.eawt=ALL-UNNAMED'
     ]
 
-    args '--developer-mode'
+    args '--developer-mode', '--debug'
+
+
+    standardInput = System.in
+    standardOutput = System.out
+    errorOutput = System.err
 }
