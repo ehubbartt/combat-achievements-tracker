@@ -302,7 +302,7 @@ public class CombatAchievementPanel extends JPanel {
             tooltip.append("<b>Type:</b> ").append(achievement.getType()).append("<br>");
         }
 
-        tooltip.append("<b>Solo:</b> ").append(achievement.isSoloOnly() ? "Yes" : "No").append("<br>");
+//        tooltip.append("<b>Solo:</b> ").append(achievement.isSoloOnly() ? "Yes" : "No").append("<br>");
 
         String priorityText = achievement.getUserPriority() == 0 ? "Unrated" : achievement.getUserPriority() + "/5";
         String difficultyText = achievement.getUserDifficulty() == 0 ? "Unrated" : achievement.getUserDifficulty() + "/5";
