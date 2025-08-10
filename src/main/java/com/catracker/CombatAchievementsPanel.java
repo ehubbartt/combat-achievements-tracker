@@ -158,11 +158,11 @@ public class CombatAchievementsPanel extends PluginPanel
                     JOptionPane.showMessageDialog(this, "All tracked achievements cleared!");
                     break;
                 case 1: // Force Save
-                    plugin.saveTrackedAchievements(trackedAchievements);
+                    saveTrackedAchievements();
                     JOptionPane.showMessageDialog(this, "Force save completed - check console!");
                     break;
                 case 2: // Force Load
-                    plugin.loadTrackedAchievements();
+                    loadTrackedAchievements();
                     refreshAchievementsList();
                     JOptionPane.showMessageDialog(this, "Force load completed - check console!");
                     break;
@@ -246,7 +246,7 @@ public class CombatAchievementsPanel extends PluginPanel
             refreshButton.setEnabled(false);
 
             SwingUtilities.invokeLater(() -> {
-                plugin.loadTrackedAchievements();
+                loadTrackedAchievements();
                 refreshButton.setText("Refresh Data");
                 refreshButton.setEnabled(true);
             });
@@ -266,7 +266,7 @@ public class CombatAchievementsPanel extends PluginPanel
             log.info("Updated allAchievements list, now contains {} items", allAchievements.size());
 
             // Load tracked achievements AFTER we have the full achievements list
-            plugin.loadTrackedAchievements();
+            loadTrackedAchievements();
 
             // Force a complete UI refresh
             log.info("About to call refreshAchievementsList...");
@@ -446,6 +446,77 @@ public class CombatAchievementsPanel extends PluginPanel
         }
     }
 
+    public void saveTrackedAchievements() {
+        try {
+            log.info("saveTrackedAchievements called - current tracked list size: {}", trackedAchievements.size());
+
+            List<Integer> trackedIds = trackedAchievements.stream()
+                    .map(CombatAchievement::getId)
+                    .collect(Collectors.toList());
+
+
+            String trackedJson = new Gson().toJson(trackedIds);
+            log.info("JSON to save (with timestamp): '{}'", trackedJson);
+
+            try {
+                if (plugin.getConfigManager().getRSProfileKey() != null) {
+                    plugin.getConfigManager().setConfiguration(
+                            CombatAchievementsConfig.CONFIG_GROUP_NAME,
+                            "trackedAchievements",
+                            trackedJson
+                    );
+                }
+                log.info("Saved {} tracked achievements to config", trackedIds.size());
+            } catch (Exception e) {
+                log.error("Config save failed", e);
+            }
+
+
+        } catch (Exception e) {
+            log.error("Failed to save tracked achievements", e);
+        }
+    }
+
+    public void loadTrackedAchievements() {
+        try {
+
+            try {
+                String configJson = plugin.getConfigManager().getConfiguration(
+                        CombatAchievementsConfig.CONFIG_GROUP_NAME,
+                        "trackedAchievements"
+                );
+
+                if (configJson != null && !configJson.isEmpty()) {
+                    Type listType = new TypeToken<List<Integer>>(){}.getType();
+                    List<Integer> configTrackedIds = new Gson().fromJson(configJson, listType);
+                    for (CombatAchievement achievement : allAchievements) {
+                        if (configTrackedIds.contains(achievement.getId())) {
+                            achievement.setTracked(true);
+                            trackedAchievements.add(achievement);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.debug("config not found or invalid: {}", e.getMessage());
+            }
+
+        } catch (Exception e) {
+            log.error("Failed to load tracked achievements", e);
+        }
+    }
+
+    public void clearAllConfigData() {
+
+        try {
+            plugin.getConfigManager().unsetConfiguration(
+                    CombatAchievementsConfig.CONFIG_GROUP_NAME,
+                    " trackedAchievements"
+            );
+        } catch (Exception e) {
+            log.debug("Failed to clear");
+        }
+    }
+
     // Add this method to manually clear all tracked achievements for testing
     public void clearAllTracked()
     {
@@ -454,7 +525,7 @@ public class CombatAchievementsPanel extends PluginPanel
         for (CombatAchievement achievement : new ArrayList<>(trackedAchievements)) {
             achievement.setTracked(false);
         }
-        plugin.clearAllConfigData();
+        clearAllConfigData();
         trackedAchievements.clear();
 //        saveTrackedAchievements();
         updateStats();
@@ -504,7 +575,7 @@ public class CombatAchievementsPanel extends PluginPanel
             log.info("Added achievement to tracked: {} (ID: {}). New size: {}",
                     achievement.getName(), achievement.getId(), trackedAchievements.size());
 
-            plugin.saveTrackedAchievements(trackedAchievements);
+            saveTrackedAchievements();
             updateStats();
         }
         else
@@ -525,7 +596,7 @@ public class CombatAchievementsPanel extends PluginPanel
             log.info("Removed achievement from tracked: {} (ID: {}). New size: {}",
                     achievement.getName(), achievement.getId(), trackedAchievements.size());
 
-            plugin.saveTrackedAchievements(trackedAchievements);
+            saveTrackedAchievements();
             updateStats();
         }
         else

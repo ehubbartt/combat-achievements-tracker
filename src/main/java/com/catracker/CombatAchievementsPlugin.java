@@ -15,6 +15,7 @@ import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.gameval.VarPlayerID;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
@@ -42,8 +43,12 @@ public class CombatAchievementsPlugin extends Plugin
     private Client client;
 
     @Inject
+    private ClientThread clientThread;
+
+    @Inject
     private CombatAchievementsConfig config;
 
+    @Getter
     @Inject
     private ConfigManager configManager;
 
@@ -174,158 +179,90 @@ public class CombatAchievementsPlugin extends Plugin
         return config.tierGoal();
     }
 
-    public void saveTrackedAchievements(List<CombatAchievement> trackedAchievements ) {
-        try {
-            log.info("saveTrackedAchievements called - current tracked list size: {}", trackedAchievements.size());
-
-            List<Integer> trackedIds = trackedAchievements.stream()
-                    .map(CombatAchievement::getId)
-                    .collect(Collectors.toList());
-
-
-            String trackedJson = new Gson().toJson(trackedIds);
-            log.info("JSON to save (with timestamp): '{}'", trackedJson);
-
-            try {
-                if (configManager.getRSProfileKey() != null) {
-                    configManager.setConfiguration(
-                            CombatAchievementsConfig.CONFIG_GROUP_NAME,
-                            "trackedAchievements",
-                            trackedJson
-                    );
-                }
-                log.info("Saved {} tracked achievements to config", trackedIds.size());
-            } catch (Exception e) {
-                log.error("Config save failed", e);
-            }
-
-
-        } catch (Exception e) {
-            log.error("Failed to save tracked achievements", e);
-        }
-    }
-
-    public void loadTrackedAchievements() {
-        try {
-
-            try {
-                String v2Json = configManager.getConfiguration(
-                        CombatAchievementsConfig.CONFIG_GROUP_NAME,
-                        "trackedAchievements"
-                );
-
-                if (v2Json != null && !v2Json.isEmpty()) {
-                    Type listType = new TypeToken<List<Integer>>(){}.getType();
-                    List<Integer> configTrackedIds = new Gson().fromJson(v2Json, listType);
-                    log.info(configTrackedIds.toString());
-                }
-            } catch (Exception e) {
-                log.debug("V2 config not found or invalid: {}", e.getMessage());
-            }
-
-        } catch (Exception e) {
-            log.error("Failed to load tracked achievements", e);
-        }
-    }
-
-    public void clearAllConfigData() {
-
-            try {
-                configManager.unsetConfiguration(
-                        CombatAchievementsConfig.CONFIG_GROUP_NAME,
-                        " trackedAchievements"
-                );
-            } catch (Exception e) {
-                log.debug("Failed to clear");
-            }
-    }
-
-    /**
-     * Load combat achievements from client data (called from GameTick - client thread)
-     */
     private void loadCombatAchievementsFromClient()
     {
         if (client == null || client.getGameState() != GameState.LOGGED_IN || client.getLocalPlayer() == null)
         {
-            log.warn("Client not ready for loading combat achievements - GameState: {}, LocalPlayer: {}",
-                    client != null ? client.getGameState() : "null",
-                    client != null && client.getLocalPlayer() != null ? "present" : "null");
+            log.warn("Client not ready for loading combat achievements");
             return;
         }
 
-        try
-        {
-            log.info("Loading Combat Achievements from client data...");
-            List<CombatAchievement> achievements = new ArrayList<>();
-            int totalLoaded = 0;
-
-            for (Map.Entry<Integer, String> tierEntry : TIER_MAP.entrySet())
+        // Run the loading on client thread to avoid conflicts
+        clientThread.invokeLater(() -> {
+            try
             {
-                int enumId = tierEntry.getKey();
-                String tierName = tierEntry.getValue();
+                log.info("Loading Combat Achievements from client data...");
+                List<CombatAchievement> achievements = new ArrayList<>();
+                int totalLoaded = 0;
 
-                var enumComp = client.getEnum(enumId);
-                if (enumComp == null)
+                for (Map.Entry<Integer, String> tierEntry : TIER_MAP.entrySet())
                 {
-                    log.warn("Could not find enum for tier: {} ({})", tierName, enumId);
-                    continue;
-                }
+                    int enumId = tierEntry.getKey();
+                    String tierName = tierEntry.getValue();
 
-                int[] structIds = enumComp.getIntVals();
-
-                for (int structId : structIds)
-                {
-                    var struct = client.getStructComposition(structId);
-                    if (struct == null)
+                    var enumComp = client.getEnum(enumId);
+                    if (enumComp == null)
                     {
-                        log.warn("Could not find struct: {}", structId);
+                        log.warn("Could not find enum for tier: {} ({})", tierName, enumId);
                         continue;
                     }
 
-                    String name = struct.getStringValue(1308);
-                    String description = struct.getStringValue(1309);
-                    int id = struct.getIntValue(1306);
-                    int typeId = struct.getIntValue(1311);
-                    String type = TYPE_MAP.get(typeId);
+                    int[] structIds = enumComp.getIntVals();
 
-                    boolean completed = false;
-                    if (id >= 0 && id < VARP_IDS.length * 32)
+                    for (int structId : structIds)
                     {
-                        int varpIndex = id / 32;
-                        int bitIndex = id % 32;
-                        if (varpIndex < VARP_IDS.length)
+                        var struct = client.getStructComposition(structId);
+                        if (struct == null)
                         {
-                            int varpValue = client.getVarpValue(VARP_IDS[varpIndex]);
-                            completed = (varpValue & (1 << bitIndex)) != 0;
+                            log.warn("Could not find struct: {}", structId);
+                            continue;
                         }
+
+                        String name = struct.getStringValue(1308);
+                        String description = struct.getStringValue(1309);
+                        int id = struct.getIntValue(1306);
+                        int typeId = struct.getIntValue(1311);
+                        String type = TYPE_MAP.get(typeId);
+
+                        boolean completed = false;
+                        if (id >= 0 && id < VARP_IDS.length * 32)
+                        {
+                            int varpIndex = id / 32;
+                            int bitIndex = id % 32;
+                            if (varpIndex < VARP_IDS.length)
+                            {
+                                int varpValue = client.getVarpValue(VARP_IDS[varpIndex]);
+                                completed = (varpValue & (1 << bitIndex)) != 0;
+                            }
+                        }
+
+                        int points = getPointsForTier(tierName);
+                        CombatAchievement achievement = new CombatAchievement(
+                                id, name, type, description, tierName, points, completed, false
+                        );
+
+                        achievements.add(achievement);
+                        totalLoaded++;
                     }
-
-                    int points = getPointsForTier(tierName);
-                    CombatAchievement achievement = new CombatAchievement(
-                            id, name, type, description, tierName, points, completed, false
-                    );
-
-                    achievements.add(achievement);
-                    totalLoaded++;
                 }
+
+                final List<CombatAchievement> finalAchievements = achievements;
+
+                SwingUtilities.invokeLater(() -> {
+                    if (panel != null)
+                    {
+                        panel.updateAchievements(finalAchievements);
+                    }
+                });
+
+                dataLoadRequested = false;
             }
-
-            SwingUtilities.invokeLater(() -> {
-                if (panel != null)
-                {
-                    panel.updateAchievements(achievements);
-                }
-            });
-
-            // Reset the data load flags
-            dataLoadRequested = false;
-        }
-        catch (Exception e)
-        {
-            log.error("Failed to load Combat Achievements from client", e);
-            // Reset flags even on error
-            dataLoadRequested = false;
-        }
+            catch (Exception e)
+            {
+                log.error("Failed to load Combat Achievements from client", e);
+                dataLoadRequested = false;
+            }
+        });
     }
 
     private int getPointsForTier(String tier)
