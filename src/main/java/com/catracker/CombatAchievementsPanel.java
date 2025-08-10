@@ -1,24 +1,25 @@
 package com.catracker;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
+
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.GameState;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
+import net.runelite.client.ui.components.IconTextField;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -28,12 +29,13 @@ public class CombatAchievementsPanel extends PluginPanel
 
     // UI Components
     private final JTextField searchField = new JTextField();
+    @Getter
+    private final IconTextField searchBar;
     private final JPanel headerPanel = new JPanel(new BorderLayout());
     private final JPanel filtersPanel = new JPanel();
     private final JPanel statsPanel = new JPanel();
     private final JScrollPane achievementsList = new JScrollPane();
     private final JPanel achievementsContainer = new JPanel();
-    private final JButton refreshButton = new JButton("Refresh Data");
 
     // Stats labels
     private final JLabel totalPointsLabel = new JLabel("Total Points: 0");
@@ -57,6 +59,8 @@ public class CombatAchievementsPanel extends PluginPanel
 
         setLayout(new BorderLayout());
         setBackground(ColorScheme.DARK_GRAY_COLOR);
+
+        searchBar = new IconTextField();
 
         initializeComponents();
         layoutComponents();
@@ -123,57 +127,40 @@ public class CombatAchievementsPanel extends PluginPanel
         titleLabel.setForeground(Color.WHITE);
         titleLabel.setBorder(new EmptyBorder(10, 10, 5, 10));
 
-        JPanel searchPanel = new JPanel(new BorderLayout());
-        searchPanel.setBorder(new EmptyBorder(0, 10, 5, 10));
-        searchPanel.add(new JLabel("Search: "), BorderLayout.WEST);
-        searchPanel.add(searchField, BorderLayout.CENTER);
+        searchBar.setIcon(IconTextField.Icon.SEARCH);
+        searchBar.setPreferredSize(new Dimension(getWidth(), 30));
+        searchBar.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        searchBar.setHoverBackgroundColor(ColorScheme.DARK_GRAY_HOVER_COLOR);
+        searchBar
+                .getDocument()
+                .addDocumentListener(
+                        new DocumentListener() {
+                            @Override
+                            public void insertUpdate(DocumentEvent e) {
+                                currentSearchText = searchBar.getText().toLowerCase();
+                                refreshAchievementsList();
+                            }
 
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        buttonPanel.setBorder(new EmptyBorder(0, 10, 5, 10));
-        refreshButton.setFont(FontManager.getRunescapeSmallFont());
-        refreshButton.setToolTipText("Refresh Combat Achievements from game data");
-        buttonPanel.add(refreshButton);
+                            @Override
+                            public void removeUpdate(DocumentEvent e) {
+                                currentSearchText = searchBar.getText().toLowerCase();
+                                refreshAchievementsList();
+                            }
 
-        JButton debugButton = new JButton("Debug");
-        debugButton.setFont(FontManager.getRunescapeSmallFont());
-        debugButton.setToolTipText("Debug tracked achievements");
-        debugButton.addActionListener(e -> {
-            int choice = JOptionPane.showOptionDialog(
-                    this,
-                    "Check console for debug info. What would you like to do?",
-                    "Debug Tracked Achievements",
-                    JOptionPane.YES_NO_CANCEL_OPTION,
-                    JOptionPane.QUESTION_MESSAGE,
-                    null,
-                    new String[]{"Clear All Tracked", "Force Save", "Force Load", "Cancel"},
-                    "Cancel"
-            );
+                            @Override
+                            public void changedUpdate(DocumentEvent e) {
+                                currentSearchText = searchBar.getText().toLowerCase();
+                                refreshAchievementsList();
+                            }
+                        });
 
-            switch (choice) {
-                case 0: // Clear All
-                    clearAllTracked();
-                    JOptionPane.showMessageDialog(this, "All tracked achievements cleared!");
-                    break;
-                case 1: // Force Save
-                    saveTrackedAchievements();
-                    JOptionPane.showMessageDialog(this, "Force save completed - check console!");
-                    break;
-                case 2: // Force Load
-                    loadTrackedAchievements();
-                    refreshAchievementsList();
-                    JOptionPane.showMessageDialog(this, "Force load completed - check console!");
-                    break;
-            }
-        });
-
-        buttonPanel.add(debugButton);
-
-        JPanel searchAndButtonPanel = new JPanel(new BorderLayout());
-        searchAndButtonPanel.add(searchPanel, BorderLayout.CENTER);
-        searchAndButtonPanel.add(buttonPanel, BorderLayout.SOUTH);
+        JPanel searchBarContainer = new JPanel();
+        searchBarContainer.setLayout(new BoxLayout(searchBarContainer, BoxLayout.Y_AXIS));
+        searchBarContainer.setBorder(new EmptyBorder(6, 0, 2, 0));
+        searchBarContainer.add(searchBar);
 
         headerPanel.add(titleLabel, BorderLayout.NORTH);
-        headerPanel.add(searchAndButtonPanel, BorderLayout.CENTER);
+        headerPanel.add(searchBarContainer, BorderLayout.CENTER);
 
         filtersPanel.setLayout(new GridBagLayout());
         filtersPanel.setBorder(new EmptyBorder(0, 10, 10, 10));
@@ -216,7 +203,7 @@ public class CombatAchievementsPanel extends PluginPanel
 
         setLayout(new BorderLayout());
         add(topFixedContent, BorderLayout.NORTH);
-        add(achievementsList, BorderLayout.CENTER); // Achievements list takes remaining space
+        add(achievementsList, BorderLayout.CENTER);
 
         achievementsList.setPreferredSize(new Dimension(PluginPanel.PANEL_WIDTH, 400));
     }
@@ -238,16 +225,6 @@ public class CombatAchievementsPanel extends PluginPanel
         typeFilter.addActionListener(e -> refreshAchievementsList());
 //        soloOnlyFilter.addActionListener(e -> refreshAchievementsList());
 
-        refreshButton.addActionListener(e -> {
-            refreshButton.setText("Refreshing...");
-            refreshButton.setEnabled(false);
-
-            SwingUtilities.invokeLater(() -> {
-                loadTrackedAchievements();
-                refreshButton.setText("Refresh Data");
-                refreshButton.setEnabled(true);
-            });
-        });
     }
 
     public void updateAchievements(List<CombatAchievement> newAchievements)
