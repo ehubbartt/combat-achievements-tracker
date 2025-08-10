@@ -138,9 +138,6 @@ public class CombatAchievementsPanel extends PluginPanel
         debugButton.setFont(FontManager.getRunescapeSmallFont());
         debugButton.setToolTipText("Debug tracked achievements");
         debugButton.addActionListener(e -> {
-            debugTrackedState();
-
-            // Show a popup with current state
             int choice = JOptionPane.showOptionDialog(
                     this,
                     "Check console for debug info. What would you like to do?",
@@ -517,7 +514,6 @@ public class CombatAchievementsPanel extends PluginPanel
         }
     }
 
-    // Add this method to manually clear all tracked achievements for testing
     public void clearAllTracked()
     {
         log.info("Manually clearing all tracked achievements. Current size: {}", trackedAchievements.size());
@@ -532,27 +528,6 @@ public class CombatAchievementsPanel extends PluginPanel
         refreshAchievementsList();
 
         log.info("All tracked achievements cleared");
-    }
-
-    // Add this method to debug the current state
-    public void debugTrackedState()
-    {
-        log.info("=== TRACKED ACHIEVEMENTS DEBUG ===");
-        log.info("trackedAchievements list size: {}", trackedAchievements.size());
-
-        for (int i = 0; i < trackedAchievements.size(); i++) {
-            CombatAchievement achievement = trackedAchievements.get(i);
-            log.info("  [{}] {} (ID: {}) - tracked: {}",
-                    i, achievement.getName(), achievement.getId(), achievement.isTracked());
-        }
-
-        // Count how many achievements in allAchievements are marked as tracked
-        long trackedCount = allAchievements.stream()
-                .filter(CombatAchievement::isTracked)
-                .count();
-
-        log.info("Total achievements marked as tracked in allAchievements: {}", trackedCount);
-        log.info("=== END DEBUG ===");
     }
 
     public void onAchievementCompleted(String message)
