@@ -34,7 +34,7 @@ public interface CombatAchievementsConfig extends Config
 
     default TierGoal tierGoal()
     {
-        return TierGoal.TIER_GRANDMASTER;
+        return TierGoal.TIER_AUTO;
     }
 
     // Notifications
@@ -66,6 +66,7 @@ public interface CombatAchievementsConfig extends Config
     @ConfigGroup("combatachievements")
     enum TierGoal
     {
+        TIER_AUTO("Auto"),
         TIER_EASY("Easy"),
         TIER_MEDIUM("Medium"),
         TIER_HARD("Hard"),

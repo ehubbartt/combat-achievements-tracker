@@ -665,7 +665,8 @@ public class CombatAchievementsPanel extends PluginPanel
                 .sum();
 
         CombatAchievementsConfig.TierGoal tierGoal = plugin.getTierGoal();
-        int pointGoal = getPointsFromGoal(tierGoal);
+        int pointGoal = getPointsFromGoal(tierGoal, totalCompletedPoints);
+        String actualTierName = getActualTierName(tierGoal, totalCompletedPoints);
 
         String viewContext = showingTrackedOnly ? "tracked" : "filtered";
 
@@ -675,11 +676,31 @@ public class CombatAchievementsPanel extends PluginPanel
         trackedPointsLabel.setText("Tracked: " + completedTrackedPoints + "/" +
                 totalTrackedPoints + " pts (" + trackedAchievements.size() + " tasks)");
 
-        int remainingPoints = Math.max(0, pointGoal - totalCompletedPoints);
-        goalLabel.setText("Goal: " + remainingPoints + " pts to " + tierGoal);
+        if (totalCompletedPoints >= pointGoal) {
+            goalLabel.setText("Goal: " + tierGoal + " Completed! (" + totalCompletedPoints + " pts)");
+        } else {
+            int remainingPoints = pointGoal - totalCompletedPoints;
+            goalLabel.setText("Goal: " + remainingPoints + " pts to " + actualTierName);
+        }
     }
 
-    public int getPointsFromGoal(CombatAchievementsConfig.TierGoal tierGoal) {
+    public int getPointsFromGoal(CombatAchievementsConfig.TierGoal tierGoal, int completedPoints) {
+        if (tierGoal.equals(CombatAchievementsConfig.TierGoal.TIER_AUTO)) {
+            if (completedPoints < 38) {
+                return 38; // Easy
+            } else if (completedPoints < 148) {
+                return 148; // Medium
+            } else if (completedPoints < 394) {
+                return 394; // Hard
+            } else if (completedPoints < 1026) {
+                return 1026; // Elite
+            } else if (completedPoints < 1841) {
+                return 1841; // Master
+            } else {
+                return 2525; // Grandmaster
+            }
+        }
+
         switch (tierGoal)
         {
             case TIER_EASY: return 38;
@@ -687,8 +708,28 @@ public class CombatAchievementsPanel extends PluginPanel
             case TIER_HARD: return 394;
             case TIER_ELITE: return 1026;
             case TIER_MASTER: return 1841;
-            default: return 2525;
+            default: return 2525; // TIER_GRANDMASTER
         }
+    }
+
+    private String getActualTierName(CombatAchievementsConfig.TierGoal tierGoal, int completedPoints) {
+        if (tierGoal.toString().equalsIgnoreCase("AUTO")) {
+            if (completedPoints < 38) {
+                return "Easy";
+            } else if (completedPoints < 148) {
+                return "Medium";
+            } else if (completedPoints < 394) {
+                return "Hard";
+            } else if (completedPoints < 1026) {
+                return "Elite";
+            } else if (completedPoints < 1841) {
+                return "Master";
+            } else {
+                return "Grandmaster";
+            }
+        }
+
+        return tierGoal.toString();
     }
 
     public void saveTrackedAchievements() {
