@@ -306,10 +306,6 @@ public class CombatAchievementsPlugin extends Plugin
             }
         });
 
-        if (config.showProgressNotifications())
-        {
-            // TODO: Show notification with progress to next tier
-        }
     }
 
     @Provides

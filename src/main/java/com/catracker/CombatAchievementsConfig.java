@@ -11,11 +11,11 @@ public interface CombatAchievementsConfig extends Config
     String CONFIG_GROUP_NAME = "combatachievements";
 
     @ConfigSection(
-            name = "Display Settings",
+            name = "List Settings",
             description = "Configure how achievements are displayed",
             position = 0
     )
-    String displaySection = "display";
+    String listSection = "list";
 
     @ConfigSection(
             name = "Notifications",
@@ -24,43 +24,11 @@ public interface CombatAchievementsConfig extends Config
     )
     String notificationSection = "notifications";
 
-    @ConfigSection(
-            name = "Data Management",
-            description = "Import/Export settings",
-            position = 2
-    )
-    String dataSection = "data";
-
-    // Display Settings
-    @ConfigItem(
-            keyName = "showCompletedAchievements",
-            name = "Show Completed Achievements",
-            description = "Whether to show completed achievements in the list",
-            section = displaySection,
-            position = 0
-    )
-    default boolean showCompletedAchievements()
-    {
-        return true;
-    }
-
-    @ConfigItem(
-            keyName = "showBorderColors",
-            name = "Show Tier Border Colors",
-            description = "Show colored borders based on achievement tier",
-            section = displaySection,
-            position = 1
-    )
-    default boolean showBorderColors()
-    {
-        return true;
-    }
-
     @ConfigItem(
             keyName = "tierGoal",
             name = "Set Your Current Goal",
             description = "Set a CA tier goal",
-            section = displaySection,
+            section = listSection,
             position = 2
     )
 
@@ -94,33 +62,8 @@ public interface CombatAchievementsConfig extends Config
         return true;
     }
 
-    @ConfigItem(
-            keyName = "currentPointsGoal",
-            name = "Current Points Goal",
-            description = "Your target points for the next tier (e.g., 50, 100, 250, etc.)",
-            section = notificationSection,
-            position = 2
-    )
-    default int currentPointsGoal()
-    {
-        return 50; // Default to Easy tier
-    }
-
-    // Data Management
-    @ConfigItem(
-            keyName = "autoSaveEnabled",
-            name = "Auto-save Tracked Achievements",
-            description = "Automatically save your tracked achievements list",
-            section = dataSection,
-            position = 0
-    )
-    default boolean autoSaveEnabled()
-    {
-        return true;
-    }
 
     @ConfigGroup("combatachievements")
-
     enum TierGoal
     {
         TIER_EASY("Easy"),
