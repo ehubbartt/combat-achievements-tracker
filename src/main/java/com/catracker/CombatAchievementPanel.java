@@ -1,12 +1,10 @@
 package com.catracker;
-
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.SwingUtil;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
@@ -15,12 +13,10 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.net.URI;
-
 @Slf4j
 public class CombatAchievementPanel extends JPanel {
     private final CombatAchievementsPlugin plugin;
     private final CombatAchievement achievement;
-
     // UI Components
     private final JPanel container = new JPanel(new BorderLayout());
     private final JPanel body = new JPanel(new BorderLayout());
@@ -28,15 +24,20 @@ public class CombatAchievementPanel extends JPanel {
     private final JLabel descriptionLabel = new JLabel();
     private final JLabel tierLabel = new JLabel();
     private final JLabel pointsLabel = new JLabel();
-    private final JPanel buttonPanel = new JPanel();
     private final JToggleButton trackButton = new JToggleButton();
-    private final JButton priorityButton = new JButton();
+
+    // Store references to all panels that need background color updates
+    private final JPanel topSection = new JPanel(new BorderLayout());
+    private final JPanel nameLabelPanel = new JPanel(new BorderLayout());
+    private final JPanel topRightPanel = new JPanel();
+    private final JPanel bottomSection = new JPanel(new BorderLayout());
+    private final JPanel leftInfo = new JPanel();
+    private final JLabel bossLabel = new JLabel();
 
     public CombatAchievementPanel(CombatAchievementsPlugin plugin, CombatAchievement achievement) {
         super(new BorderLayout());
         this.plugin = plugin;
         this.achievement = achievement;
-
         createPanel();
         setupEventHandlers();
         refresh();
@@ -45,38 +46,44 @@ public class CombatAchievementPanel extends JPanel {
     private void createPanel() {
         setLayout(new BorderLayout());
         setBorder(new EmptyBorder(2, 2, 2, 2));
-
         container.setBorder(new LineBorder(achievement.getTierColor(), 1));
         container.setBackground(getBackgroundColor());
-
         body.setLayout(new BorderLayout());
         body.setBackground(getBackgroundColor());
         body.setBorder(new EmptyBorder(6, 6, 6, 6));
 
-        JPanel topSection = new JPanel(new BorderLayout());
         topSection.setBackground(getBackgroundColor());
+
+        nameLabelPanel.setBackground(getBackgroundColor());
+        nameLabelPanel.setPreferredSize(new Dimension(PluginPanel.PANEL_WIDTH - 60, 20)); // Reserve space for button and padding
+        nameLabelPanel.setMaximumSize(new Dimension(PluginPanel.PANEL_WIDTH - 60, 20));
 
         nameLabel.setFont(FontManager.getRunescapeSmallFont());
         nameLabel.setForeground(achievement.isCompleted() ? Color.GREEN : Color.WHITE);
+        nameLabel.setText("<html>" + achievement.getName() + "</html>");
 
-        String displayName = achievement.getName();
-        nameLabel.setText("<html><div style='width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;'>" + displayName + "</div></html>");
+        nameLabelPanel.add(nameLabel, BorderLayout.WEST);
 
-        pointsLabel.setFont(FontManager.getRunescapeSmallFont());
-        pointsLabel.setForeground(Color.CYAN);
-        pointsLabel.setText(achievement.getPoints() + " pts");
+        topRightPanel.setLayout(new BoxLayout(topRightPanel, BoxLayout.X_AXIS));
+        topRightPanel.setBackground(getBackgroundColor());
 
-        topSection.add(nameLabel, BorderLayout.WEST);
-        topSection.add(pointsLabel, BorderLayout.EAST);
+        trackButton.setPreferredSize(new Dimension(12, 12));
+        trackButton.setMaximumSize(new Dimension(12, 12));
+        trackButton.setMinimumSize(new Dimension(12, 12));
+        updateTrackButton();
+        SwingUtil.removeButtonDecorations(trackButton);
+
+        topRightPanel.add(trackButton);
+
+        topSection.add(nameLabelPanel, BorderLayout.WEST);
+        topSection.add(topRightPanel, BorderLayout.EAST);
 
         descriptionLabel.setFont(FontManager.getRunescapeSmallFont());
         descriptionLabel.setForeground(Color.LIGHT_GRAY);
-        descriptionLabel.setText("<html><div style='width: 180px;'>" + achievement.getDescription() + "</div></html>");
+        descriptionLabel.setText("<html>" + achievement.getDescription() + "</html>");
 
-        JPanel bottomSection = new JPanel(new BorderLayout());
         bottomSection.setBackground(getBackgroundColor());
 
-        JPanel leftInfo = new JPanel();
         leftInfo.setLayout(new BoxLayout(leftInfo, BoxLayout.Y_AXIS));
         leftInfo.setBackground(getBackgroundColor());
 
@@ -95,46 +102,26 @@ public class CombatAchievementPanel extends JPanel {
         if (!achievement.isSoloOnly()) {
             bossInfo += (bossInfo.isEmpty() ? "" : " • ") + "Group";
         }
-
-        JLabel bossLabel = new JLabel(bossInfo);
+        bossLabel.setText(bossInfo);
         bossLabel.setFont(FontManager.getRunescapeSmallFont());
         bossLabel.setForeground(Color.GRAY);
 
+        pointsLabel.setFont(FontManager.getRunescapeSmallFont());
+        pointsLabel.setForeground(Color.CYAN);
+        pointsLabel.setText(achievement.getPoints() + " pts");
+
         bottomSection.add(leftInfo, BorderLayout.WEST);
-        bottomSection.add(bossLabel, BorderLayout.EAST);
+        bottomSection.add(bossLabel, BorderLayout.CENTER);
+        bottomSection.add(pointsLabel, BorderLayout.EAST);
 
         body.add(topSection, BorderLayout.NORTH);
         body.add(descriptionLabel, BorderLayout.CENTER);
         body.add(bottomSection, BorderLayout.SOUTH);
 
-        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
-        buttonPanel.setBackground(getBackgroundColor());
-        buttonPanel.setBorder(new EmptyBorder(6, 0, 6, 6));
-
-        trackButton.setPreferredSize(new Dimension(12, 12));
-        trackButton.setMaximumSize(new Dimension(12, 12));
-        trackButton.setMinimumSize(new Dimension(12, 12));
-        updateTrackButton();
-        SwingUtil.removeButtonDecorations(trackButton);
-
-        // Priority button (shows user priority 0-5)
-        priorityButton.setPreferredSize(new Dimension(12, 12));
-        priorityButton.setMaximumSize(new Dimension(12, 12));
-        priorityButton.setMinimumSize(new Dimension(12, 12));
-        updatePriorityButton();
-        SwingUtil.removeButtonDecorations(priorityButton);
-
-        buttonPanel.add(trackButton);
-        buttonPanel.add(Box.createVerticalStrut(3));
-        buttonPanel.add(priorityButton);
-
-        // Assemble container
         container.add(body, BorderLayout.CENTER);
-        container.add(buttonPanel, BorderLayout.EAST);
 
         add(container, BorderLayout.CENTER);
 
-        // Tooltip
         setToolTipText(createTooltip());
     }
 
@@ -142,7 +129,6 @@ public class CombatAchievementPanel extends JPanel {
         trackButton.addActionListener(e -> {
             achievement.setTracked(!achievement.isTracked());
             updateTrackButton();
-
             if (achievement.isTracked()) {
                 plugin.getPanel().addToTracked(achievement);
             } else {
@@ -150,15 +136,6 @@ public class CombatAchievementPanel extends JPanel {
             }
         });
 
-        // Priority button - cycle through 0-5
-        priorityButton.addActionListener(e -> {
-            int currentPriority = achievement.getUserPriority();
-            int newPriority = (currentPriority + 1) % 6; // Cycle 0->1->2->3->4->5->0
-            achievement.setUserPriority(newPriority);
-            updatePriorityButton();
-        });
-
-        // Right-click context menu
         addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
@@ -166,7 +143,6 @@ public class CombatAchievementPanel extends JPanel {
                     showContextMenu(e);
                 }
             }
-
             @Override
             public void mouseReleased(MouseEvent e) {
                 if (e.isPopupTrigger()) {
@@ -178,24 +154,18 @@ public class CombatAchievementPanel extends JPanel {
 
     private void showContextMenu(MouseEvent e) {
         JPopupMenu popup = new JPopupMenu();
-
         // Wiki link
         JMenuItem wikiItem = new JMenuItem("Open Wiki");
         wikiItem.addActionListener(event -> openWikiLink());
         popup.add(wikiItem);
-
         popup.addSeparator();
-
         JMenu difficultyMenu = new JMenu("Set Difficulty");
-
-        // Add "Unrated" option
         JMenuItem unratedItem = new JMenuItem("Unrated");
         unratedItem.addActionListener(event -> {
             achievement.setUserDifficulty(0);
             setToolTipText(createTooltip());
         });
         difficultyMenu.add(unratedItem);
-
         for (int i = 1; i <= 5; i++) {
             final int difficulty = i;
             JMenuItem diffItem = new JMenuItem(difficulty + "/5" + (difficulty == achievement.getUserDifficulty() ? " ✓" : ""));
@@ -206,8 +176,6 @@ public class CombatAchievementPanel extends JPanel {
             difficultyMenu.add(diffItem);
         }
         popup.add(difficultyMenu);
-
-        // Mark completed (for testing)
         if (!achievement.isCompleted()) {
             popup.addSeparator();
             JMenuItem completeItem = new JMenuItem("Mark as Completed (Test)");
@@ -217,7 +185,6 @@ public class CombatAchievementPanel extends JPanel {
             });
             popup.add(completeItem);
         }
-
         popup.show(e.getComponent(), e.getX(), e.getY());
     }
 
@@ -227,18 +194,6 @@ public class CombatAchievementPanel extends JPanel {
         } catch (Exception ex) {
             log.error("Failed to open wiki link: {}", achievement.getWikiUrl(), ex);
         }
-    }
-
-    private void updatePriorityButton() {
-        int priority = achievement.getUserPriority();
-        if (priority == 0) {
-            priorityButton.setText("-");
-            priorityButton.setToolTipText("Priority: Unrated (click to set)");
-        } else {
-            priorityButton.setText(String.valueOf(priority));
-            priorityButton.setToolTipText("Priority: " + priority + "/5");
-        }
-        priorityButton.setFont(FontManager.getRunescapeSmallFont());
     }
 
     private void updateTrackButton() {
@@ -251,12 +206,9 @@ public class CombatAchievementPanel extends JPanel {
                 originalIcon = ImageUtil.loadImageResource(CombatAchievementPanel.class, "track_add.png");
                 trackButton.setToolTipText("Add to tracking");
             }
-
             BufferedImage resizedIcon = ImageUtil.resizeImage(originalIcon, 12, 12);
-
             trackButton.setIcon(new ImageIcon(resizedIcon));
             trackButton.setText("");
-
         } catch (Exception e) {
             // Fallback to text if icons can't be loaded
             if (achievement.isTracked()) {
@@ -285,55 +237,55 @@ public class CombatAchievementPanel extends JPanel {
         }
     }
 
+    private void updateAllBackgrounds() {
+        Color bgColor = getBackgroundColor();
+
+        container.setBackground(bgColor);
+        body.setBackground(bgColor);
+        topSection.setBackground(bgColor);
+        nameLabelPanel.setBackground(bgColor);
+        topRightPanel.setBackground(bgColor);
+        bottomSection.setBackground(bgColor);
+        leftInfo.setBackground(bgColor);
+    }
+
     private String createTooltip() {
         StringBuilder tooltip = new StringBuilder();
         tooltip.append("<html>");
         tooltip.append("<b>").append(achievement.getName()).append("</b><br>");
         tooltip.append(achievement.getDescription()).append("<br><br>");
-
-        tooltip.append("<b>Tier:</b> ").append(achievement.getTier()).append("<br>");
-        tooltip.append("<b>Points:</b> ").append(achievement.getPoints()).append("<br>");
-
+        tooltip.append("Tier: ").append(achievement.getTier()).append("<br>");
+        tooltip.append("Points: ").append(achievement.getPoints()).append("<br>");
         if (achievement.getBossName() != null) {
-            tooltip.append("<b>Boss:</b> ").append(achievement.getBossName()).append("<br>");
+            tooltip.append("Boss: ").append(achievement.getBossName()).append("<br>");
         }
-
         if (achievement.getType() != null) {
-            tooltip.append("<b>Type:</b> ").append(achievement.getType()).append("<br>");
+            tooltip.append("Type: ").append(achievement.getType()).append("<br>");
         }
 
-//        tooltip.append("<b>Solo:</b> ").append(achievement.isSoloOnly() ? "Yes" : "No").append("<br>");
-
-        String priorityText = achievement.getUserPriority() == 0 ? "Unrated" : achievement.getUserPriority() + "/5";
         String difficultyText = achievement.getUserDifficulty() == 0 ? "Unrated" : achievement.getUserDifficulty() + "/5";
-
-        tooltip.append("<b>Your Priority:</b> ").append(priorityText).append("<br>");
-        tooltip.append("<b>Your Difficulty:</b> ").append(difficultyText).append("<br>");
-
+        tooltip.append("Your Difficulty: ").append(difficultyText).append("<br>");
         if (achievement.getCompletionPercentage() != null) {
-            tooltip.append("<b>Player Completion:</b> ").append(String.format("%.1f%%", achievement.getCompletionPercentage())).append("<br>");
+            tooltip.append("Player Completion: ").append(String.format("%.1f%%", achievement.getCompletionPercentage())).append("<br>");
         }
-
         if (achievement.isCompleted()) {
-            tooltip.append("<br><b>Completed</b>");
+            tooltip.append("<br><font color='green'>Completed</font>");
         }
-
         tooltip.append("</html>");
         return tooltip.toString();
     }
 
     public void refresh() {
         SwingUtilities.invokeLater(() -> {
-            nameLabel.setText(achievement.getName() + (achievement.isCompleted() ? " ✓" : ""));
+            nameLabel.setText("<html>" + achievement.getName() + "</html>");
             nameLabel.setForeground(achievement.isCompleted() ? Color.GREEN : Color.WHITE);
 
-            container.setBackground(getBackgroundColor());
-            body.setBackground(getBackgroundColor());
-            buttonPanel.setBackground(getBackgroundColor());
+            container.setBorder(new LineBorder(achievement.getTierColor(), 1));
+
+            updateAllBackgrounds();
 
             updateTrackButton();
             setToolTipText(createTooltip());
-
             revalidate();
             repaint();
         });

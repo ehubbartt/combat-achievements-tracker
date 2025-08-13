@@ -22,7 +22,6 @@ public class CombatAchievement
     private boolean tracked;
     private long completedTimestamp;
 
-    // Additional properties for your feature requirements
     private String bossName;
     private String type; // Kill Count, Perfection, Restriction, Mechanical, etc.
     private boolean soloOnly;
@@ -144,11 +143,6 @@ public class CombatAchievement
             this.basePoints = basePoints;
         }
 
-        public String getDisplayName()
-        {
-            return displayName;
-        }
-
         public java.awt.Color getColor()
         {
             return color;
@@ -173,7 +167,7 @@ public class CombatAchievement
                     return level;
                 }
             }
-            return EASY; // Default fallback
+            return EASY;
         }
     }
 }

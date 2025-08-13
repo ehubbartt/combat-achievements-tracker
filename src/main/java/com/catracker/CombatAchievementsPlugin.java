@@ -318,9 +318,6 @@ public class CombatAchievementsPlugin extends Plugin
         return configManager.getConfig(CombatAchievementsConfig.class);
     }
 
-    /**
-     * Trigger a refresh of combat achievements data (for manual refresh button)
-     */
     public void refreshCombatAchievements()
     {
         if (client != null && client.getGameState() == GameState.LOGGED_IN)
