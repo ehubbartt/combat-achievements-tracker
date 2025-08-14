@@ -203,7 +203,7 @@ public class CombatAchievementsPanel extends PluginPanel
         titleLabel.setBorder(new EmptyBorder(10, 10, 5, 10));
 
         searchBar.setIcon(IconTextField.Icon.SEARCH);
-        searchBar.setPreferredSize(new Dimension(0, 30)); // Set proper height, width will expand
+        searchBar.setPreferredSize(new Dimension(0, 30));
         searchBar.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         searchBar.setHoverBackgroundColor(ColorScheme.DARK_GRAY_HOVER_COLOR);
         searchBar.getDocument().addDocumentListener(new DocumentListener() {
@@ -225,26 +225,19 @@ public class CombatAchievementsPanel extends PluginPanel
         });
 
         JPanel searchBarContainer = new JPanel(new BorderLayout());
-        searchBarContainer.setBorder(new EmptyBorder(6, 10, 2, 10)); // Add horizontal padding to match other elements
+        searchBarContainer.setBorder(new EmptyBorder(6, 10, 2, 10));
         searchBarContainer.add(searchBar, BorderLayout.CENTER);
 
         headerPanel.add(titleLabel, BorderLayout.NORTH);
         headerPanel.add(searchBarContainer, BorderLayout.CENTER);
 
-        // Stats panel
         setupStatsPanel();
 
-        // Collapsible filters panel
         setupFiltersSection();
 
-        // Tasks section - same width as everything above, no padding
-        setupTasksSection();
-
-        // CRITICAL: Use this as PluginPanel, not BorderLayout on this panel
         setLayout(new BorderLayout());
         setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-        // Fixed content at top
         JPanel fixedContent = new JPanel();
         fixedContent.setLayout(new BoxLayout(fixedContent, BoxLayout.Y_AXIS));
         fixedContent.setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -254,9 +247,8 @@ public class CombatAchievementsPanel extends PluginPanel
         fixedContent.add(filtersSection);
         fixedContent.add(viewButtonsPanel);
 
-        // Add to main panel
         add(fixedContent, BorderLayout.NORTH);
-        add(achievementsList, BorderLayout.CENTER); // Scroll ONLY the tasks
+        add(achievementsList, BorderLayout.CENTER);
     }
 
     private void setupStatsPanel()
@@ -390,17 +382,10 @@ public class CombatAchievementsPanel extends PluginPanel
         return row;
     }
 
-    private void setupTasksSection()
-    {
-        // No extra panel wrapper - tasks go directly in scroll pane
-        // This ensures tasks are same width as everything above
-    }
-
     private void toggleFilters()
     {
         filtersExpanded = !filtersExpanded;
         filtersPanel.setVisible(filtersExpanded);
-        // Update button text with caret at the right
         if (filtersExpanded) {
             filtersToggleButton.setText("Filters                                                    ^");
         } else {
@@ -511,10 +496,8 @@ public class CombatAchievementsPanel extends PluginPanel
                 {
                     try {
                         CombatAchievementPanel panel = new CombatAchievementPanel(plugin, achievement);
-                        // Store reference to this panel for future updates
                         achievementPanels.put(achievement.getId(), panel);
 
-                        // Make tasks same width as other elements - constrain to container width minus padding
                         panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, panel.getPreferredSize().height));
                         panel.setAlignmentX(Component.CENTER_ALIGNMENT);
                         achievementsContainer.add(panel);
@@ -528,7 +511,6 @@ public class CombatAchievementsPanel extends PluginPanel
             achievementsContainer.revalidate();
             achievementsContainer.repaint();
 
-            // Only reset scroll position when requested (e.g., filtering/sorting, not tracking)
             if (resetScrollPosition) {
                 SwingUtilities.invokeLater(() -> {
                     achievementsList.getVerticalScrollBar().setValue(0);
@@ -543,7 +525,6 @@ public class CombatAchievementsPanel extends PluginPanel
                 .filter(this::matchesFilters)
                 .collect(Collectors.toList());
 
-        // Apply sorting
         String sortOption = (String) sortFilter.getSelectedItem();
         if (sortOption != null) {
             switch (sortOption) {
@@ -629,7 +610,6 @@ public class CombatAchievementsPanel extends PluginPanel
         return true;
     }
 
-    // NEW: Efficient method to update just stats without rebuilding list
     private void updateStatsOnly()
     {
         SwingUtilities.invokeLater(() -> {
@@ -812,7 +792,6 @@ public class CombatAchievementsPanel extends PluginPanel
         refreshAchievementsList();
     }
 
-    // NEW: Efficient tracking methods that don't rebuild the entire list
     public void addToTracked(CombatAchievement achievement)
     {
         log.info("addToTracked called for: {} (ID: {})", achievement.getName(), achievement.getId());
@@ -824,14 +803,12 @@ public class CombatAchievementsPanel extends PluginPanel
             log.info("Added achievement to tracked: {} (ID: {}). New size: {}",
                     achievement.getName(), achievement.getId(), trackedAchievements.size());
 
-            // Find and update the specific panel if it exists
             CombatAchievementPanel panel = achievementPanels.get(achievement.getId());
             if (panel != null) {
                 panel.refresh();
                 log.debug("Refreshed individual panel for achievement: {}", achievement.getName());
             }
 
-            // Only update stats, don't rebuild the entire list
             updateStatsOnly();
             saveTrackedAchievements();
         }
@@ -851,22 +828,18 @@ public class CombatAchievementsPanel extends PluginPanel
             log.info("Removed achievement from tracked: {} (ID: {}). New size: {}",
                     achievement.getName(), achievement.getId(), trackedAchievements.size());
 
-            // Find and update the specific panel if it exists
             CombatAchievementPanel panel = achievementPanels.get(achievement.getId());
             if (panel != null) {
                 panel.refresh();
                 log.debug("Refreshed individual panel for achievement: {}", achievement.getName());
             }
 
-            // Only update stats, don't rebuild the entire list
             updateStatsOnly();
             saveTrackedAchievements();
 
-            // Special case: if we're in tracked view and removed an item, we need to rebuild
-            // because the item should disappear from the list
             if (showingTrackedOnly) {
                 log.debug("In tracked view - rebuilding list to remove untracked item");
-                refreshAchievementsList(false); // Don't reset scroll position
+                refreshAchievementsList(false);
             }
         }
         else
