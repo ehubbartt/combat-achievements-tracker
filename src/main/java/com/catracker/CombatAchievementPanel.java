@@ -86,33 +86,30 @@ public class CombatAchievementPanel extends JPanel {
         topSection.add(nameLabelPanel, BorderLayout.WEST);
         topSection.add(topRightPanel, BorderLayout.EAST);
 
+        JPanel centerPanel = new JPanel();
+        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+        centerPanel.setBackground(getBackgroundColor());
+
+        String bossTypeText = getBossTypeText();
+        if (bossTypeText != null && !bossTypeText.isEmpty()) {
+            JLabel bossTypeLabel = new JLabel(bossTypeText);
+            bossTypeLabel.setFont(FontManager.getRunescapeSmallFont());
+            bossTypeLabel.setForeground(Color.LIGHT_GRAY);
+            bossTypeLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+            bossTypeLabel.setBorder(new EmptyBorder(2, 0, 4, 0));
+            centerPanel.add(bossTypeLabel);
+        }
+
         descriptionLabel.setFont(FontManager.getRunescapeSmallFont());
         descriptionLabel.setForeground(Color.LIGHT_GRAY);
         descriptionLabel.setText("<html>" + achievement.getDescription() + "</html>");
+        descriptionLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        centerPanel.add(descriptionLabel);
 
         bottomSection.setBackground(getBackgroundColor());
 
         leftInfo.setLayout(new BoxLayout(leftInfo, BoxLayout.Y_AXIS));
         leftInfo.setBackground(getBackgroundColor());
-
-        JLabel typeLabel = new JLabel();
-        typeLabel.setFont(FontManager.getRunescapeSmallFont());
-        typeLabel.setForeground(Color.LIGHT_GRAY);
-        typeLabel.setText(achievement.getType() != null ? achievement.getType() : "Unknown");
-
-        tierLabel.setFont(FontManager.getRunescapeSmallFont());
-        tierLabel.setForeground(getImprovedTierColor());
-        tierLabel.setText(achievement.getTier() + " - " + achievement.getType());
-
-        leftInfo.add(tierLabel);
-
-        String bossInfo = achievement.getBossName() != null ? achievement.getBossName() : "";
-        if (!achievement.isSoloOnly()) {
-            bossInfo += (bossInfo.isEmpty() ? "" : " • ") + "Group";
-        }
-        bossLabel.setText(bossInfo);
-        bossLabel.setFont(FontManager.getRunescapeSmallFont());
-        bossLabel.setForeground(Color.GRAY);
 
         pointsLabel.setFont(FontManager.getRunescapeSmallFont());
         pointsLabel.setForeground(Color.CYAN);
@@ -123,8 +120,8 @@ public class CombatAchievementPanel extends JPanel {
         bottomSection.add(pointsLabel, BorderLayout.EAST);
 
         body.add(topSection, BorderLayout.NORTH);
-        body.add(descriptionLabel, BorderLayout.CENTER);
-        body.add(bottomSection, BorderLayout.SOUTH);
+        body.add(centerPanel, BorderLayout.CENTER);
+//        body.add(bottomSection, BorderLayout.SOUTH);
 
         container.add(body, BorderLayout.CENTER);
 
@@ -133,7 +130,23 @@ public class CombatAchievementPanel extends JPanel {
         setToolTipText(createTooltip());
     }
 
-    // NEW: Setup tier icon based on achievement tier
+    private String getBossTypeText() {
+        String bossName = achievement.getBossName();
+        String type = achievement.getType();
+
+        if (bossName != null && !bossName.equals("None") && !bossName.isEmpty()) {
+            if (type != null && !type.isEmpty()) {
+                return bossName + " - " + type;
+            } else {
+                return bossName;
+            }
+        } else if (type != null && !type.isEmpty()) {
+            return type;
+        }
+
+        return null;
+    }
+
     private void setupTierIcon() {
         try {
             String tierName = achievement.getTier().toLowerCase();
@@ -145,7 +158,6 @@ public class CombatAchievementPanel extends JPanel {
             tierIconLabel.setToolTipText(achievement.getTier() + " Tier");
         } catch (Exception e) {
             log.warn("Could not load tier icon for {}: {}", achievement.getTier(), e.getMessage());
-            // Fallback: no icon
             tierIconLabel.setIcon(null);
         }
     }
@@ -153,7 +165,7 @@ public class CombatAchievementPanel extends JPanel {
     private Color getImprovedTierColor() {
         switch (achievement.getTier().toLowerCase()) {
             case "easy":
-                return new Color(205, 133, 63);
+                return new Color(150, 111, 76);
             case "medium":
                 return new Color(169, 169, 169);
             case "hard":
@@ -161,7 +173,7 @@ public class CombatAchievementPanel extends JPanel {
             case "elite":
                 return new Color(70, 100, 150);
             case "master":
-                return new Color(120, 70, 70);
+                return new Color(185, 70, 70);
             case "grandmaster":
                 return new Color(255, 215, 0);
             default:
@@ -213,7 +225,7 @@ public class CombatAchievementPanel extends JPanel {
         JMenuItem wikiItem = new JMenuItem("Open Wiki");
         wikiItem.addActionListener(event -> openWikiLink());
         popup.add(wikiItem);
-        popup.addSeparator();
+//        popup.addSeparator();
         JMenu difficultyMenu = new JMenu("Set Difficulty");
         JMenuItem unratedItem = new JMenuItem("Unrated");
         unratedItem.addActionListener(event -> {
@@ -233,7 +245,7 @@ public class CombatAchievementPanel extends JPanel {
         //TODO: add in difficulty
 //        popup.add(difficultyMenu);
         if (!achievement.isCompleted()) {
-            popup.addSeparator();
+//            popup.addSeparator();
             JMenuItem completeItem = new JMenuItem("Mark as Completed (Test)");
             completeItem.addActionListener(event -> {
                 achievement.markCompleted();
@@ -320,13 +332,18 @@ public class CombatAchievementPanel extends JPanel {
             tooltip.append("Type: ").append(achievement.getType()).append("<br>");
         }
 
-        String difficultyText = achievement.getUserDifficulty() == 0 ? "Unrated" : achievement.getUserDifficulty() + "/5";
-        tooltip.append("Your Difficulty: ").append(difficultyText).append("<br>");
+//        String difficultyText = achievement.getUserDifficulty() == 0 ? "Unrated" : achievement.getUserDifficulty() + "/5";
+//        tooltip.append("Your Difficulty: ").append(difficultyText).append("<br>");
         if (achievement.getCompletionPercentage() != null) {
             tooltip.append("Player Completion: ").append(String.format("%.1f%%", achievement.getCompletionPercentage())).append("<br>");
         }
         if (achievement.isCompleted()) {
             tooltip.append("<br><font color='green'>Completed</font>");
+        } else {
+            tooltip.append("<br><font color='red'>Incomplete</font>");
+        }
+        if(achievement.isTracked()){
+            tooltip.append("<br><font color=#6495ED>Tracked</font>");
         }
         tooltip.append("</html>");
         return tooltip.toString();

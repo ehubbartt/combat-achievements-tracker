@@ -179,41 +179,33 @@ public class CombatAchievementsPlugin extends Plugin
         return config.tierGoal();
     }
 
-    private void loadCombatAchievementsFromClient()
-    {
-        if (client == null || client.getGameState() != GameState.LOGGED_IN || client.getLocalPlayer() == null)
-        {
+    private void loadCombatAchievementsFromClient() {
+        if (client == null || client.getGameState() != GameState.LOGGED_IN || client.getLocalPlayer() == null) {
             log.warn("Client not ready for loading combat achievements");
             return;
         }
 
-        // Run the loading on client thread to avoid conflicts
         clientThread.invokeLater(() -> {
-            try
-            {
+            try {
                 log.info("Loading Combat Achievements from client data...");
                 List<CombatAchievement> achievements = new ArrayList<>();
                 int totalLoaded = 0;
 
-                for (Map.Entry<Integer, String> tierEntry : TIER_MAP.entrySet())
-                {
+                for (Map.Entry<Integer, String> tierEntry : TIER_MAP.entrySet()) {
                     int enumId = tierEntry.getKey();
                     String tierName = tierEntry.getValue();
 
                     var enumComp = client.getEnum(enumId);
-                    if (enumComp == null)
-                    {
+                    if (enumComp == null) {
                         log.warn("Could not find enum for tier: {} ({})", tierName, enumId);
                         continue;
                     }
 
                     int[] structIds = enumComp.getIntVals();
 
-                    for (int structId : structIds)
-                    {
+                    for (int structId : structIds) {
                         var struct = client.getStructComposition(structId);
-                        if (struct == null)
-                        {
+                        if (struct == null) {
                             log.warn("Could not find struct: {}", structId);
                             continue;
                         }
@@ -223,14 +215,14 @@ public class CombatAchievementsPlugin extends Plugin
                         int id = struct.getIntValue(1306);
                         int typeId = struct.getIntValue(1311);
                         String type = TYPE_MAP.get(typeId);
+                        int bossId = struct.getIntValue(1312);
+                        String bossName = getBossName(bossId);
 
                         boolean completed = false;
-                        if (id >= 0 && id < VARP_IDS.length * 32)
-                        {
+                        if (id >= 0 && id < VARP_IDS.length * 32) {
                             int varpIndex = id / 32;
                             int bitIndex = id % 32;
-                            if (varpIndex < VARP_IDS.length)
-                            {
+                            if (varpIndex < VARP_IDS.length) {
                                 int varpValue = client.getVarpValue(VARP_IDS[varpIndex]);
                                 completed = (varpValue & (1 << bitIndex)) != 0;
                             }
@@ -238,7 +230,7 @@ public class CombatAchievementsPlugin extends Plugin
 
                         int points = getPointsForTier(tierName);
                         CombatAchievement achievement = new CombatAchievement(
-                                id, name, type, description, tierName, points, completed, false
+                                id, name, bossName, type, description, tierName, points, completed, false
                         );
 
                         achievements.add(achievement);
@@ -249,20 +241,29 @@ public class CombatAchievementsPlugin extends Plugin
                 final List<CombatAchievement> finalAchievements = achievements;
 
                 SwingUtilities.invokeLater(() -> {
-                    if (panel != null)
-                    {
+                    if (panel != null) {
                         panel.updateAchievements(finalAchievements);
                     }
                 });
 
                 dataLoadRequested = false;
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
                 log.error("Failed to load Combat Achievements from client", e);
                 dataLoadRequested = false;
             }
         });
+    }
+
+    private String getBossName(int bossId) {
+        try {
+            var bossEnum = client.getEnum(3971);
+            if (bossEnum != null) {
+                return bossEnum.getStringValue(bossId);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to get boss name for ID {}: {}", bossId, e.getMessage());
+        }
+        return "Unknown";
     }
 
     private int getPointsForTier(String tier)

@@ -885,11 +885,11 @@ public class CombatAchievementsPanel extends PluginPanel {
     }
 
     private void loadSampleData() {
-        allAchievements.add(new CombatAchievement(1, "Just Getting Started","", "Kill any boss", "Easy", 1, false, false));
-        allAchievements.add(new CombatAchievement(2, "Squashing Foot Soldiers", "","Kill 5 goblins", "Easy", 1, false, false));
-        allAchievements.add(new CombatAchievement(3, "Giant Mole Hunter","", "Kill the Giant Mole", "Medium", 2, false, false));
-        allAchievements.add(new CombatAchievement(4, "Barrows Champion","", "Complete all Barrows brothers", "Hard", 4, false, false));
-        allAchievements.add(new CombatAchievement(5, "Zuk Slayer","", "Complete the Inferno", "Master", 6, false, false));
+        allAchievements.add(new CombatAchievement(1, "Just Getting Started", "bossname","test", "Kill any boss", "Easy", 1, false, false));
+        allAchievements.add(new CombatAchievement(2, "Squashing Foot Soldiers","bossname", "test","Kill 5 goblins", "Easy", 1, false, false));
+        allAchievements.add(new CombatAchievement(3, "Giant Mole Hunter","bossname","test", "Kill the Giant Mole", "Medium", 2, false, false));
+        allAchievements.add(new CombatAchievement(4, "Barrows Champion","bossname","test", "Complete all Barrows brothers", "Hard", 4, false, false));
+        allAchievements.add(new CombatAchievement(5, "Zuk Slayer","bossname","test", "Complete the Inferno", "Master", 6, false, false));
     }
 
     public void refreshCombatAchievements() {

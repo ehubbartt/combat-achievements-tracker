@@ -30,10 +30,11 @@ public class CombatAchievement
     private Float completionPercentage; // Wiki completion percentage
     private String wikiUrl;
 
-    public CombatAchievement(int id, String name, String type, String description, String tier, int points, boolean completed, boolean tracked)
+    public CombatAchievement(int id, String name, String bossName, String type, String description, String tier, int points, boolean completed, boolean tracked)
     {
         this.id = id;
         this.name = name;
+        this.bossName = bossName;
         this.type = type;
         this.description = description;
         this.tier = tier;
@@ -46,21 +47,6 @@ public class CombatAchievement
         this.userPriority = 0; // Medium priority by default
         this.userDifficulty = 0; // Medium difficulty by default
         this.soloOnly = true; // Most combat achievements are solo
-    }
-
-    /**
-     * Full constructor with all properties
-     */
-    public CombatAchievement(int id, String name, String description, String tier, int points,
-                             boolean completed, boolean tracked, String bossName, String type,
-                             boolean soloOnly, Float completionPercentage, String wikiUrl)
-    {
-        this(id, name, "unknown", description, tier, points, completed, tracked);
-        this.bossName = bossName;
-        this.type = type;
-        this.soloOnly = soloOnly;
-        this.completionPercentage = completionPercentage;
-        this.wikiUrl = wikiUrl;
     }
 
     /**
