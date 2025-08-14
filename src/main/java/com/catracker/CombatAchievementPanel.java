@@ -215,7 +215,6 @@ public class CombatAchievementPanel extends JPanel {
         popup.add(wikiItem);
         popup.addSeparator();
         JMenu difficultyMenu = new JMenu("Set Difficulty");
-        // Add "Unrated" option
         JMenuItem unratedItem = new JMenuItem("Unrated");
         unratedItem.addActionListener(event -> {
             achievement.setUserDifficulty(0);
@@ -231,8 +230,8 @@ public class CombatAchievementPanel extends JPanel {
             });
             difficultyMenu.add(diffItem);
         }
-        popup.add(difficultyMenu);
-        // Mark completed (for testing)
+        //TODO: add in difficulty
+//        popup.add(difficultyMenu);
         if (!achievement.isCompleted()) {
             popup.addSeparator();
             JMenuItem completeItem = new JMenuItem("Mark as Completed (Test)");
@@ -240,7 +239,8 @@ public class CombatAchievementPanel extends JPanel {
                 achievement.markCompleted();
                 refresh();
             });
-            popup.add(completeItem);
+            //only for testing
+//            popup.add(completeItem);
         }
         popup.show(e.getComponent(), e.getX(), e.getY());
     }
@@ -267,7 +267,6 @@ public class CombatAchievementPanel extends JPanel {
             trackButton.setIcon(new ImageIcon(resizedIcon));
             trackButton.setText("");
         } catch (Exception e) {
-            // Fallback to text if icons can't be loaded
             if (achievement.isTracked()) {
                 trackButton.setText("X");
                 trackButton.setIcon(null);
@@ -288,11 +287,9 @@ public class CombatAchievementPanel extends JPanel {
         return ColorScheme.DARKER_GRAY_COLOR;
     }
 
-    // Method to update all panel backgrounds
     private void updateAllBackgrounds() {
         Color bgColor = getBackgroundColor();
 
-        // Only update backgrounds of panels INSIDE the bordered container
         container.setBackground(bgColor);
         body.setBackground(bgColor);
         topSection.setBackground(bgColor);
@@ -301,7 +298,6 @@ public class CombatAchievementPanel extends JPanel {
         bottomSection.setBackground(bgColor);
         leftInfo.setBackground(bgColor);
 
-        // Also update the name with icon panel background
         Component[] components = nameLabelPanel.getComponents();
         for (Component comp : components) {
             if (comp instanceof JPanel) {

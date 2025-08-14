@@ -8,6 +8,7 @@ import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.ui.components.IconTextField;
+import net.runelite.client.util.ImageUtil;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
@@ -16,22 +17,22 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 @Slf4j
-public class CombatAchievementsPanel extends PluginPanel
-{
+public class CombatAchievementsPanel extends PluginPanel {
     private final CombatAchievementsPlugin plugin;
 
-    // View state
     private boolean showingTrackedOnly = false;
     private boolean filtersExpanded = false;
+    private boolean tiersExpanded = false;
     private boolean sortAscending = true;
 
-    // UI Components
     private final JTextField searchField = new JTextField();
     @Getter
     private final IconTextField searchBar;
@@ -42,36 +43,35 @@ public class CombatAchievementsPanel extends PluginPanel
     private final JPanel filtersSection = new JPanel();
     private final JButton filtersToggleButton = new JButton("Filters ▼");
     private final JPanel filtersPanel = new JPanel();
-    // Remove the tasksSection references and variables since we don't need them
+    private final JPanel tiersSection = new JPanel();
+    private final JButton tiersToggleButton = new JButton("Tiers ▼");
+    private final JPanel tiersPanel = new JPanel();
     private final JPanel statsPanel = new JPanel();
     private final JScrollPane achievementsList = new JScrollPane();
     private final JPanel achievementsContainer = new JPanel();
 
-    // Stats labels
     private final JLabel totalPointsLabel = new JLabel("Total Points: 0");
     private final JLabel trackedPointsLabel = new JLabel("Tracked: 0");
     private final JLabel goalLabel = new JLabel("Progress: 0/50");
 
-    // Filter components
     private final JComboBox<String> tierFilter = new JComboBox<>();
     private final JComboBox<String> statusFilter = new JComboBox<>();
     private final JComboBox<String> typeFilter = new JComboBox<>();
     private final JComboBox<String> sortFilter = new JComboBox<>();
     private final JButton sortDirectionButton = new JButton("↑");
 
-    // Sample data - Real data will be loaded by the plugin
     private List<CombatAchievement> allAchievements = new ArrayList<>();
     private List<CombatAchievement> trackedAchievements = new ArrayList<>();
     private String currentSearchText = "";
+    private final Map<String, Boolean> selectedTiers = new HashMap<>();
 
-    // NEW: Keep track of panel references for efficient updates
     private final Map<Integer, CombatAchievementPanel> achievementPanels = new HashMap<>();
 
-    public CombatAchievementsPanel(CombatAchievementsPlugin plugin)
-    {
-        super(false); // Critical: false prevents automatic scrolling
+    public CombatAchievementsPanel(CombatAchievementsPlugin plugin) {
+        super(false);
         this.plugin = plugin;
         searchBar = new IconTextField();
+        initializeTierFilters();
         initializeComponents();
         layoutComponents();
         setupEventHandlers();
@@ -79,30 +79,30 @@ public class CombatAchievementsPanel extends PluginPanel
         refreshAchievementsList();
     }
 
-    private void initializeComponents()
-    {
-        // Search field
+    private void initializeTierFilters() {
+        selectedTiers.put("Easy", true);
+        selectedTiers.put("Medium", true);
+        selectedTiers.put("Hard", true);
+        selectedTiers.put("Elite", true);
+        selectedTiers.put("Master", true);
+        selectedTiers.put("Grandmaster", true);
+    }
+
+    private void initializeComponents() {
         searchField.setFont(FontManager.getRunescapeSmallFont());
         searchField.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         searchField.setForeground(Color.WHITE);
         searchField.setBorder(new EmptyBorder(5, 5, 5, 5));
 
-        // View toggle buttons
         setupViewButtons();
-
-        // Filter dropdowns
         setupFilterDropdowns();
-
-        // Stats labels
         setupStatsLabels();
 
-        // Achievements container - NO PADDING inside scroll container
         achievementsContainer.setLayout(new BoxLayout(achievementsContainer, BoxLayout.Y_AXIS));
         achievementsContainer.setBackground(ColorScheme.DARK_GRAY_COLOR);
-        achievementsContainer.setBorder(new EmptyBorder(0, 10, 0, 10)); // Add horizontal padding to center tasks
+        achievementsContainer.setBorder(new EmptyBorder(0, 10, 0, 10));
         achievementsContainer.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Scroll pane - ONLY for the tasks list, no padding
         achievementsList.setViewportView(achievementsContainer);
         achievementsList.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         achievementsList.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
@@ -111,13 +111,11 @@ public class CombatAchievementsPanel extends PluginPanel
         achievementsList.getVerticalScrollBar().setUnitIncrement(16);
     }
 
-    private void setupViewButtons()
-    {
+    private void setupViewButtons() {
         allTasksButton.setFont(FontManager.getRunescapeSmallFont());
         trackedTasksButton.setFont(FontManager.getRunescapeSmallFont());
 
-        // Style the buttons with orange theme
-        styleToggleButton(allTasksButton, true); // Default selected
+        styleToggleButton(allTasksButton, true);
         styleToggleButton(trackedTasksButton, false);
 
         viewButtonsPanel.setLayout(new GridLayout(1, 2, 2, 0));
@@ -126,8 +124,7 @@ public class CombatAchievementsPanel extends PluginPanel
         viewButtonsPanel.add(trackedTasksButton);
     }
 
-    private void styleToggleButton(JButton button, boolean selected)
-    {
+    private void styleToggleButton(JButton button, boolean selected) {
         if (selected) {
             button.setBackground(ColorScheme.BRAND_ORANGE);
             button.setForeground(Color.WHITE);
@@ -141,9 +138,7 @@ public class CombatAchievementsPanel extends PluginPanel
         button.setOpaque(true);
     }
 
-    private void setupFilterDropdowns()
-    {
-        // Tier filter
+    private void setupFilterDropdowns() {
         tierFilter.addItem("All Tiers");
         tierFilter.addItem("Easy");
         tierFilter.addItem("Medium");
@@ -152,12 +147,10 @@ public class CombatAchievementsPanel extends PluginPanel
         tierFilter.addItem("Master");
         tierFilter.addItem("Grandmaster");
 
-        // Status filter
         statusFilter.addItem("All");
         statusFilter.addItem("Completed");
         statusFilter.addItem("Incomplete");
 
-        // Type filter
         typeFilter.addItem("All Types");
         typeFilter.addItem("Stamina");
         typeFilter.addItem("Perfection");
@@ -167,13 +160,11 @@ public class CombatAchievementsPanel extends PluginPanel
         typeFilter.addItem("Speed");
         typeFilter.addItem("Other");
 
-        // Sort filter
         sortFilter.addItem("Tier");
         sortFilter.addItem("Points");
         sortFilter.addItem("Name");
         sortFilter.addItem("Completion");
 
-        // Sort direction button
         sortDirectionButton.setFont(FontManager.getRunescapeSmallFont());
         sortDirectionButton.setPreferredSize(new Dimension(25, 20));
         sortDirectionButton.setBackground(ColorScheme.DARKER_GRAY_COLOR);
@@ -182,8 +173,7 @@ public class CombatAchievementsPanel extends PluginPanel
         sortDirectionButton.setFocusPainted(false);
     }
 
-    private void setupStatsLabels()
-    {
+    private void setupStatsLabels() {
         totalPointsLabel.setFont(FontManager.getRunescapeSmallFont());
         totalPointsLabel.setForeground(Color.WHITE);
 
@@ -194,9 +184,7 @@ public class CombatAchievementsPanel extends PluginPanel
         goalLabel.setForeground(Color.GREEN);
     }
 
-    private void layoutComponents()
-    {
-        // Title and search
+    private void layoutComponents() {
         JLabel titleLabel = new JLabel("Combat Achievements");
         titleLabel.setFont(FontManager.getRunescapeBoldFont());
         titleLabel.setForeground(Color.WHITE);
@@ -232,8 +220,9 @@ public class CombatAchievementsPanel extends PluginPanel
         headerPanel.add(searchBarContainer, BorderLayout.CENTER);
 
         setupStatsPanel();
-
+        setupTiersSection();
         setupFiltersSection();
+        setupTasksSection();
 
         setLayout(new BorderLayout());
         setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -244,6 +233,7 @@ public class CombatAchievementsPanel extends PluginPanel
 
         fixedContent.add(headerPanel);
         fixedContent.add(statsPanel);
+        fixedContent.add(tiersSection);
         fixedContent.add(filtersSection);
         fixedContent.add(viewButtonsPanel);
 
@@ -251,13 +241,11 @@ public class CombatAchievementsPanel extends PluginPanel
         add(achievementsList, BorderLayout.CENTER);
     }
 
-    private void setupStatsPanel()
-    {
+    private void setupStatsPanel() {
         statsPanel.setLayout(new GridLayout(3, 1, 0, 5));
         statsPanel.setBorder(new EmptyBorder(8, 10, 8, 10));
         statsPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-        // Create individual stat cards stacked vertically
         JPanel totalCard = createStatCard("Total Progress", totalPointsLabel, ColorScheme.BRAND_ORANGE);
         JPanel trackedCard = createStatCard("Tracked Tasks", trackedPointsLabel, new Color(50, 150, 150));
         JPanel goalCard = createStatCard("Goal Progress", goalLabel, new Color(120, 160, 80));
@@ -267,8 +255,7 @@ public class CombatAchievementsPanel extends PluginPanel
         statsPanel.add(goalCard);
     }
 
-    private JPanel createStatCard(String title, JLabel valueLabel, Color accentColor)
-    {
+    private JPanel createStatCard(String title, JLabel valueLabel, Color accentColor) {
         JPanel card = new JPanel(new BorderLayout());
         card.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         card.setBorder(BorderFactory.createCompoundBorder(
@@ -284,14 +271,13 @@ public class CombatAchievementsPanel extends PluginPanel
         valueLabel.setHorizontalAlignment(SwingConstants.LEFT);
         valueLabel.setFont(FontManager.getRunescapeSmallFont());
 
-        // Add a subtle accent line at the left with proper spacing
         JPanel accentLine = new JPanel();
         accentLine.setBackground(accentColor);
         accentLine.setPreferredSize(new Dimension(3, 0));
 
         JPanel content = new JPanel(new GridLayout(2, 1, 0, 2));
         content.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-        content.setBorder(new EmptyBorder(0, 8, 0, 0)); // Add left padding from accent line
+        content.setBorder(new EmptyBorder(0, 8, 0, 0));
         content.add(titleLabel);
         content.add(valueLabel);
 
@@ -301,13 +287,91 @@ public class CombatAchievementsPanel extends PluginPanel
         return card;
     }
 
-    private void setupFiltersSection()
-    {
+    private void setupTiersSection() {
+        tiersSection.setLayout(new BorderLayout());
+        tiersSection.setBorder(new EmptyBorder(0, 10, 5, 10));
+        tiersSection.setBackground(ColorScheme.DARK_GRAY_COLOR);
+
+        tiersToggleButton.setFont(FontManager.getRunescapeSmallFont());
+        tiersToggleButton.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        tiersToggleButton.setForeground(Color.WHITE);
+        tiersToggleButton.setBorder(new EmptyBorder(6, 8, 6, 8));
+        tiersToggleButton.setFocusPainted(false);
+        tiersToggleButton.setHorizontalAlignment(SwingConstants.LEFT);
+        tiersToggleButton.setText("Tiers                                                      v");
+
+        tiersPanel.setLayout(new GridLayout(2, 3, 5, 5));
+        tiersPanel.setBorder(new EmptyBorder(8, 0, 0, 0));
+        tiersPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        tiersPanel.setVisible(tiersExpanded);
+
+        String[] tiers = {"Easy", "Medium", "Hard", "Elite", "Master", "Grandmaster"};
+        for (String tier : tiers) {
+            JToggleButton tierButton = createTierButton(tier);
+            tiersPanel.add(tierButton);
+        }
+
+        tiersSection.add(tiersToggleButton, BorderLayout.NORTH);
+        tiersSection.add(tiersPanel, BorderLayout.CENTER);
+    }
+
+    private JToggleButton createTierButton(String tier) {
+        JToggleButton button = new JToggleButton();
+        button.setSelected(true);
+        button.setPreferredSize(new Dimension(40, 30));
+        button.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        button.setBorder(new LineBorder(ColorScheme.MEDIUM_GRAY_COLOR, 1));
+        button.setFocusPainted(false);
+
+        try {
+            String iconPath = tier.toLowerCase() + "_tier.png";
+            BufferedImage originalIcon = ImageUtil.loadImageResource(CombatAchievementPanel.class, iconPath);
+            BufferedImage resizedIcon = ImageUtil.resizeImage(originalIcon, 20, 20);
+            button.setIcon(new ImageIcon(resizedIcon));
+        } catch (Exception e) {
+            button.setText(tier.substring(0, 1));
+            button.setFont(FontManager.getRunescapeSmallFont());
+            button.setForeground(Color.WHITE);
+        }
+
+        button.setToolTipText(tier + " Tier");
+        button.addActionListener(e -> {
+            selectedTiers.put(tier, button.isSelected());
+            updateTierButtonAppearance(button, tier);
+            refreshAchievementsList();
+        });
+
+        updateTierButtonAppearance(button, tier);
+        return button;
+    }
+
+    private void updateTierButtonAppearance(JToggleButton button, String tier) {
+        if (button.isSelected()) {
+            button.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+            button.setBorder(new LineBorder(getTierColor(tier), 1));
+        } else {
+            button.setBackground(new Color(60, 60, 60));
+            button.setBorder(new LineBorder(ColorScheme.MEDIUM_GRAY_COLOR, 1));
+        }
+    }
+
+    private Color getTierColor(String tier) {
+        switch (tier.toLowerCase()) {
+            case "easy": return new Color(205, 133, 63);
+            case "medium": return new Color(169, 169, 169);
+            case "hard": return new Color(105, 105, 105);
+            case "elite": return new Color(70, 100, 150);
+            case "master": return new Color(120, 70, 70);
+            case "grandmaster": return new Color(255, 215, 0);
+            default: return Color.WHITE;
+        }
+    }
+
+    private void setupFiltersSection() {
         filtersSection.setLayout(new BorderLayout());
         filtersSection.setBorder(new EmptyBorder(0, 10, 5, 10));
         filtersSection.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-        // Toggle button with caret at the right
         filtersToggleButton.setFont(FontManager.getRunescapeSmallFont());
         filtersToggleButton.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         filtersToggleButton.setForeground(Color.WHITE);
@@ -316,7 +380,6 @@ public class CombatAchievementsPanel extends PluginPanel
         filtersToggleButton.setHorizontalAlignment(SwingConstants.LEFT);
         filtersToggleButton.setText("Filters                                                    v");
 
-        // Filters content panel
         filtersPanel.setLayout(new GridBagLayout());
         filtersPanel.setBorder(new EmptyBorder(8, 0, 0, 0));
         filtersPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -328,7 +391,6 @@ public class CombatAchievementsPanel extends PluginPanel
         gbc.weightx = 1.0;
         gbc.gridx = 0;
 
-        // Create filter rows
         gbc.gridy = 0;
         filtersPanel.add(createFilterRow("Tier", tierFilter), gbc);
 
@@ -345,8 +407,7 @@ public class CombatAchievementsPanel extends PluginPanel
         filtersSection.add(filtersPanel, BorderLayout.CENTER);
     }
 
-    private JPanel createFilterRow(String labelText, JComboBox<String> comboBox)
-    {
+    private JPanel createFilterRow(String labelText, JComboBox<String> comboBox) {
         JPanel row = new JPanel(new BorderLayout(5, 0));
         row.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
@@ -361,8 +422,7 @@ public class CombatAchievementsPanel extends PluginPanel
         return row;
     }
 
-    private JPanel createSortRow()
-    {
+    private JPanel createSortRow() {
         JPanel row = new JPanel(new BorderLayout(5, 0));
         row.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
@@ -382,8 +442,22 @@ public class CombatAchievementsPanel extends PluginPanel
         return row;
     }
 
-    private void toggleFilters()
-    {
+    private void setupTasksSection() {
+    }
+
+    private void toggleTiers() {
+        tiersExpanded = !tiersExpanded;
+        tiersPanel.setVisible(tiersExpanded);
+        if (tiersExpanded) {
+            tiersToggleButton.setText("Tiers                                                      ^");
+        } else {
+            tiersToggleButton.setText("Tiers                                                      v");
+        }
+        revalidate();
+        repaint();
+    }
+
+    private void toggleFilters() {
         filtersExpanded = !filtersExpanded;
         filtersPanel.setVisible(filtersExpanded);
         if (filtersExpanded) {
@@ -395,16 +469,13 @@ public class CombatAchievementsPanel extends PluginPanel
         repaint();
     }
 
-    private void toggleSortDirection()
-    {
+    private void toggleSortDirection() {
         sortAscending = !sortAscending;
         sortDirectionButton.setText(sortAscending ? "^" : "v");
         refreshAchievementsList();
     }
 
-    private void setupEventHandlers()
-    {
-        // View toggle buttons
+    private void setupEventHandlers() {
         allTasksButton.addActionListener(e -> {
             showingTrackedOnly = false;
             styleToggleButton(allTasksButton, true);
@@ -419,32 +490,27 @@ public class CombatAchievementsPanel extends PluginPanel
             refreshAchievementsList();
         });
 
-        // Filters toggle
+        tiersToggleButton.addActionListener(e -> toggleTiers());
+
         filtersToggleButton.addActionListener(e -> toggleFilters());
 
-        // Sort direction toggle
         sortDirectionButton.addActionListener(e -> toggleSortDirection());
 
-        // Filter change handlers
         tierFilter.addActionListener(e -> refreshAchievementsList());
         statusFilter.addActionListener(e -> refreshAchievementsList());
         typeFilter.addActionListener(e -> refreshAchievementsList());
         sortFilter.addActionListener(e -> refreshAchievementsList());
 
-        // Search field
-        searchField.addKeyListener(new KeyAdapter()
-        {
+        searchField.addKeyListener(new KeyAdapter() {
             @Override
-            public void keyReleased(KeyEvent e)
-            {
+            public void keyReleased(KeyEvent e) {
                 currentSearchText = searchField.getText().toLowerCase();
                 refreshAchievementsList();
             }
         });
     }
 
-    public void updateAchievements(List<CombatAchievement> newAchievements)
-    {
+    public void updateAchievements(List<CombatAchievement> newAchievements) {
         log.info("updateAchievements called with {} achievements", newAchievements.size());
         SwingUtilities.invokeLater(() -> {
             log.info("Running updateAchievements on EDT");
@@ -452,7 +518,6 @@ public class CombatAchievementsPanel extends PluginPanel
             allAchievements.addAll(newAchievements);
             log.info("Updated allAchievements list, now contains {} items", allAchievements.size());
 
-            // Clear panel references when we reload all achievements
             achievementPanels.clear();
 
             loadTrackedAchievements();
@@ -461,23 +526,19 @@ public class CombatAchievementsPanel extends PluginPanel
         });
     }
 
-    private void refreshAchievementsList()
-    {
+    private void refreshAchievementsList() {
         refreshAchievementsList(true);
     }
 
-    // NEW: Modified to optionally reset scroll position
-    private void refreshAchievementsList(boolean resetScrollPosition)
-    {
+    private void refreshAchievementsList(boolean resetScrollPosition) {
         SwingUtilities.invokeLater(() -> {
             achievementsContainer.removeAll();
-            achievementPanels.clear(); // Clear panel references when rebuilding
+            achievementPanels.clear();
 
             List<CombatAchievement> baseList = showingTrackedOnly ? trackedAchievements : allAchievements;
             List<CombatAchievement> filteredAchievements = getFilteredAchievements(baseList);
 
-            if (filteredAchievements.isEmpty())
-            {
+            if (filteredAchievements.isEmpty()) {
                 String emptyMessage = showingTrackedOnly ?
                         "No tracked achievements match current filters" :
                         "No achievements match current filters";
@@ -489,11 +550,8 @@ public class CombatAchievementsPanel extends PluginPanel
                 emptyLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
                 emptyLabel.setBorder(new EmptyBorder(20, 10, 20, 10));
                 achievementsContainer.add(emptyLabel);
-            }
-            else
-            {
-                for (CombatAchievement achievement : filteredAchievements)
-                {
+            } else {
+                for (CombatAchievement achievement : filteredAchievements) {
                     try {
                         CombatAchievementPanel panel = new CombatAchievementPanel(plugin, achievement);
                         achievementPanels.put(achievement.getId(), panel);
@@ -519,8 +577,7 @@ public class CombatAchievementsPanel extends PluginPanel
         });
     }
 
-    private List<CombatAchievement> getFilteredAchievements(List<CombatAchievement> sourceList)
-    {
+    private List<CombatAchievement> getFilteredAchievements(List<CombatAchievement> sourceList) {
         List<CombatAchievement> filtered = sourceList.stream()
                 .filter(this::matchesFilters)
                 .collect(Collectors.toList());
@@ -557,7 +614,6 @@ public class CombatAchievementsPanel extends PluginPanel
                     }
                     break;
                 default:
-                    // Default sort by tier then name
                     filtered.sort((a, b) -> {
                         int tierComparison = Integer.compare(a.getTierLevel().getOrder(), b.getTierLevel().getOrder());
                         return tierComparison == 0 ? a.getName().compareTo(b.getName()) : tierComparison;
@@ -568,41 +624,34 @@ public class CombatAchievementsPanel extends PluginPanel
         return filtered;
     }
 
-    private boolean matchesFilters(CombatAchievement achievement)
-    {
-        // Search filter
+    private boolean matchesFilters(CombatAchievement achievement) {
         if (!currentSearchText.isEmpty() &&
                 !achievement.getName().toLowerCase().contains(currentSearchText) &&
-                !achievement.getDescription().toLowerCase().contains(currentSearchText))
-        {
+                !achievement.getDescription().toLowerCase().contains(currentSearchText)) {
             return false;
         }
 
-        // Tier filter
         String selectedTier = (String) tierFilter.getSelectedItem();
-        if (!"All Tiers".equals(selectedTier) && !achievement.getTier().equals(selectedTier))
-        {
+        if (!"All Tiers".equals(selectedTier) && !achievement.getTier().equals(selectedTier)) {
             return false;
         }
 
-        // Status filter
+        if (!selectedTiers.getOrDefault(achievement.getTier(), true)) {
+            return false;
+        }
+
         String selectedStatus = (String) statusFilter.getSelectedItem();
-        if ("Completed".equals(selectedStatus) && !achievement.isCompleted())
-        {
+        if ("Completed".equals(selectedStatus) && !achievement.isCompleted()) {
             return false;
         }
-        if ("Incomplete".equals(selectedStatus) && achievement.isCompleted())
-        {
+        if ("Incomplete".equals(selectedStatus) && achievement.isCompleted()) {
             return false;
         }
 
-        // Type filter
         String selectedType = (String) typeFilter.getSelectedItem();
-        if (!"All Types".equals(selectedType))
-        {
+        if (!"All Types".equals(selectedType)) {
             String achievementType = achievement.getType();
-            if (achievementType == null || !achievementType.equals(selectedType))
-            {
+            if (achievementType == null || !achievementType.equals(selectedType)) {
                 return false;
             }
         }
@@ -610,15 +659,13 @@ public class CombatAchievementsPanel extends PluginPanel
         return true;
     }
 
-    private void updateStatsOnly()
-    {
+    private void updateStatsOnly() {
         SwingUtilities.invokeLater(() -> {
             updateStats();
         });
     }
 
-    private void updateStats()
-    {
+    private void updateStats() {
         List<CombatAchievement> visibleAchievements = showingTrackedOnly ? trackedAchievements : getFilteredAchievements(allAchievements);
 
         int totalCompletedPoints = allAchievements.stream()
@@ -657,7 +704,7 @@ public class CombatAchievementsPanel extends PluginPanel
                 totalTrackedPoints + " pts (" + trackedAchievements.size() + " tasks)");
 
         if (totalCompletedPoints >= pointGoal) {
-            goalLabel.setText("Goal: " + tierGoal + " Completed! (" + totalCompletedPoints + " pts)");
+            goalLabel.setText("Goal: " + actualTierName + " Completed! (" + totalCompletedPoints + " pts)");
         } else {
             int remainingPoints = pointGoal - totalCompletedPoints;
             goalLabel.setText("Goal: " + remainingPoints + " pts to " + actualTierName);
@@ -665,30 +712,29 @@ public class CombatAchievementsPanel extends PluginPanel
     }
 
     public int getPointsFromGoal(CombatAchievementsConfig.TierGoal tierGoal, int completedPoints) {
-        if (tierGoal.equals(CombatAchievementsConfig.TierGoal.TIER_AUTO)) {
+        if (tierGoal.toString().equalsIgnoreCase("AUTO")) {
             if (completedPoints < 38) {
-                return 38; // Easy
+                return 38;
             } else if (completedPoints < 148) {
-                return 148; // Medium
+                return 148;
             } else if (completedPoints < 394) {
-                return 394; // Hard
+                return 394;
             } else if (completedPoints < 1026) {
-                return 1026; // Elite
+                return 1026;
             } else if (completedPoints < 1841) {
-                return 1841; // Master
+                return 1841;
             } else {
-                return 2525; // Grandmaster
+                return 2525;
             }
         }
 
-        switch (tierGoal)
-        {
+        switch (tierGoal) {
             case TIER_EASY: return 38;
             case TIER_MEDIUM: return 148;
             case TIER_HARD: return 394;
             case TIER_ELITE: return 1026;
             case TIER_MASTER: return 1841;
-            default: return 2525; // TIER_GRANDMASTER
+            default: return 2525;
         }
     }
 
@@ -773,8 +819,7 @@ public class CombatAchievementsPanel extends PluginPanel
         }
     }
 
-    public void clearAllTracked()
-    {
+    public void clearAllTracked() {
         log.info("Manually clearing all tracked achievements. Current size: {}", trackedAchievements.size());
         for (CombatAchievement achievement : new ArrayList<>(trackedAchievements)) {
             achievement.setTracked(false);
@@ -786,18 +831,15 @@ public class CombatAchievementsPanel extends PluginPanel
         log.info("All tracked achievements cleared");
     }
 
-    public void onAchievementCompleted(String message)
-    {
+    public void onAchievementCompleted(String message) {
         log.info("Achievement completed notification: {}", message);
         refreshAchievementsList();
     }
 
-    public void addToTracked(CombatAchievement achievement)
-    {
+    public void addToTracked(CombatAchievement achievement) {
         log.info("addToTracked called for: {} (ID: {})", achievement.getName(), achievement.getId());
         log.debug("Current tracked list size before add: {}", trackedAchievements.size());
-        if (!trackedAchievements.contains(achievement))
-        {
+        if (!trackedAchievements.contains(achievement)) {
             trackedAchievements.add(achievement);
             achievement.setTracked(true);
             log.info("Added achievement to tracked: {} (ID: {}). New size: {}",
@@ -811,19 +853,15 @@ public class CombatAchievementsPanel extends PluginPanel
 
             updateStatsOnly();
             saveTrackedAchievements();
-        }
-        else
-        {
+        } else {
             log.warn("Achievement {} (ID: {}) was already in tracked list!", achievement.getName(), achievement.getId());
         }
     }
 
-    public void removeFromTracked(CombatAchievement achievement)
-    {
+    public void removeFromTracked(CombatAchievement achievement) {
         log.info("removeFromTracked called for: {} (ID: {})", achievement.getName(), achievement.getId());
         log.debug("Current tracked list size before remove: {}", trackedAchievements.size());
-        if (trackedAchievements.remove(achievement))
-        {
+        if (trackedAchievements.remove(achievement)) {
             achievement.setTracked(false);
             log.info("Removed achievement from tracked: {} (ID: {}). New size: {}",
                     achievement.getName(), achievement.getId(), trackedAchievements.size());
@@ -841,15 +879,12 @@ public class CombatAchievementsPanel extends PluginPanel
                 log.debug("In tracked view - rebuilding list to remove untracked item");
                 refreshAchievementsList(false);
             }
-        }
-        else
-        {
+        } else {
             log.warn("Achievement {} (ID: {}) was not in tracked list!", achievement.getName(), achievement.getId());
         }
     }
 
-    private void loadSampleData()
-    {
+    private void loadSampleData() {
         allAchievements.add(new CombatAchievement(1, "Just Getting Started","", "Kill any boss", "Easy", 1, false, false));
         allAchievements.add(new CombatAchievement(2, "Squashing Foot Soldiers", "","Kill 5 goblins", "Easy", 1, false, false));
         allAchievements.add(new CombatAchievement(3, "Giant Mole Hunter","", "Kill the Giant Mole", "Medium", 2, false, false));
@@ -857,8 +892,7 @@ public class CombatAchievementsPanel extends PluginPanel
         allAchievements.add(new CombatAchievement(5, "Zuk Slayer","", "Complete the Inferno", "Master", 6, false, false));
     }
 
-    public void refreshCombatAchievements()
-    {
+    public void refreshCombatAchievements() {
         plugin.refreshCombatAchievements();
     }
 }
