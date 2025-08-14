@@ -41,10 +41,10 @@ public class CombatAchievementsPanel extends PluginPanel {
     private final JButton allTasksButton = new JButton("All Tasks");
     private final JButton trackedTasksButton = new JButton("Tracked");
     private final JPanel filtersSection = new JPanel();
-    private final JButton filtersToggleButton = new JButton("Filters ▼");
+    private final JButton filtersToggleButton = new JButton("Filters v");
     private final JPanel filtersPanel = new JPanel();
     private final JPanel tiersSection = new JPanel();
-    private final JButton tiersToggleButton = new JButton("Tiers ▼");
+    private final JButton tiersToggleButton = new JButton("Tiers v");
     private final JPanel tiersPanel = new JPanel();
     private final JPanel statsPanel = new JPanel();
     private final JScrollPane achievementsList = new JScrollPane();
@@ -58,7 +58,7 @@ public class CombatAchievementsPanel extends PluginPanel {
     private final JComboBox<String> statusFilter = new JComboBox<>();
     private final JComboBox<String> typeFilter = new JComboBox<>();
     private final JComboBox<String> sortFilter = new JComboBox<>();
-    private final JButton sortDirectionButton = new JButton("↑");
+    private final JButton sortDirectionButton = new JButton("^/v");
 
     private List<CombatAchievement> allAchievements = new ArrayList<>();
     private List<CombatAchievement> trackedAchievements = new ArrayList<>();
@@ -161,7 +161,6 @@ public class CombatAchievementsPanel extends PluginPanel {
         typeFilter.addItem("Other");
 
         sortFilter.addItem("Tier");
-        sortFilter.addItem("Points");
         sortFilter.addItem("Name");
         sortFilter.addItem("Completion");
 
@@ -471,7 +470,7 @@ public class CombatAchievementsPanel extends PluginPanel {
 
     private void toggleSortDirection() {
         sortAscending = !sortAscending;
-        sortDirectionButton.setText(sortAscending ? "^" : "v");
+        sortDirectionButton.setText(sortAscending ? "^/v" : "v/^");
         refreshAchievementsList();
     }
 
