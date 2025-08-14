@@ -81,11 +81,26 @@ public class CombatAchievement
     }
 
     /**
-     * Get the color associated with this tier
+     * Get the improved color associated with this tier (for better readability)
      */
     public java.awt.Color getTierColor()
     {
-        return getTierLevel().getColor();
+        switch (tier.toLowerCase()) {
+            case "easy":
+                return new java.awt.Color(205, 133, 63);  // Peru/Sandy brown
+            case "medium":
+                return new java.awt.Color(169, 169, 169); // Dark gray
+            case "hard":
+                return new java.awt.Color(105, 105, 105); // Dim gray
+            case "elite":
+                return new java.awt.Color(100, 149, 237); // Cornflower blue
+            case "master":
+                return new java.awt.Color(220, 20, 60);   // Crimson
+            case "grandmaster":
+                return new java.awt.Color(255, 215, 0);   // Gold
+            default:
+                return java.awt.Color.WHITE;
+        }
     }
 
     /**
@@ -125,12 +140,12 @@ public class CombatAchievement
      */
     public enum TierLevel
     {
-        EASY("Easy", new java.awt.Color(139, 102, 78), 1),          // Muted brown
-        MEDIUM("Medium", new java.awt.Color(128, 128, 128), 2),     // Grey
-        HARD("Hard", new java.awt.Color(64, 64, 64), 3),            // Very dark grey
-        ELITE("Elite", new java.awt.Color(70, 100, 150), 4),        // Muted blue
-        MASTER("Master", new java.awt.Color(120, 70, 70), 5),       // Muted red
-        GRANDMASTER("Grandmaster", new java.awt.Color(170, 170, 170), 6); // White grey
+        EASY("Easy", new java.awt.Color(205, 133, 63), 1),          // Peru/Sandy brown
+        MEDIUM("Medium", new java.awt.Color(169, 169, 169), 2),     // Dark gray
+        HARD("Hard", new java.awt.Color(105, 105, 105), 3),         // Dim gray
+        ELITE("Elite", new java.awt.Color(100, 149, 237), 4),       // Cornflower blue
+        MASTER("Master", new java.awt.Color(220, 20, 60), 5),       // Crimson
+        GRANDMASTER("Grandmaster", new java.awt.Color(255, 215, 0), 6); // Gold
 
         private final String displayName;
         private final java.awt.Color color;
@@ -167,7 +182,7 @@ public class CombatAchievement
                     return level;
                 }
             }
-            return EASY;
+            return EASY; // Default fallback
         }
     }
 }

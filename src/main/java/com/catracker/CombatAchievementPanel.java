@@ -25,6 +25,7 @@ public class CombatAchievementPanel extends JPanel {
     private final JLabel tierLabel = new JLabel();
     private final JLabel pointsLabel = new JLabel();
     private final JToggleButton trackButton = new JToggleButton();
+    private final JLabel tierIconLabel = new JLabel(); // NEW: Tier icon
 
     // Store references to all panels that need background color updates
     private final JPanel topSection = new JPanel(new BorderLayout());
@@ -46,7 +47,6 @@ public class CombatAchievementPanel extends JPanel {
     private void createPanel() {
         setLayout(new BorderLayout());
         setBorder(new EmptyBorder(2, 2, 2, 2));
-        container.setBorder(new LineBorder(achievement.getTierColor(), 1));
         container.setBackground(getBackgroundColor());
         body.setLayout(new BorderLayout());
         body.setBackground(getBackgroundColor());
@@ -55,14 +55,22 @@ public class CombatAchievementPanel extends JPanel {
         topSection.setBackground(getBackgroundColor());
 
         nameLabelPanel.setBackground(getBackgroundColor());
-        nameLabelPanel.setPreferredSize(new Dimension(PluginPanel.PANEL_WIDTH - 60, 20)); // Reserve space for button and padding
+        nameLabelPanel.setPreferredSize(new Dimension(PluginPanel.PANEL_WIDTH - 60, 20));
         nameLabelPanel.setMaximumSize(new Dimension(PluginPanel.PANEL_WIDTH - 60, 20));
 
         nameLabel.setFont(FontManager.getRunescapeSmallFont());
-        nameLabel.setForeground(achievement.isCompleted() ? Color.GREEN : Color.WHITE);
+        nameLabel.setForeground(getNameColor());
         nameLabel.setText("<html>" + achievement.getName() + "</html>");
 
-        nameLabelPanel.add(nameLabel, BorderLayout.WEST);
+        setupTierIcon();
+
+        JPanel nameWithIconPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        nameWithIconPanel.setBackground(getBackgroundColor());
+        nameWithIconPanel.add(tierIconLabel);
+        nameWithIconPanel.add(Box.createHorizontalStrut(6));
+        nameWithIconPanel.add(nameLabel);
+
+        nameLabelPanel.add(nameWithIconPanel, BorderLayout.WEST);
 
         topRightPanel.setLayout(new BoxLayout(topRightPanel, BoxLayout.X_AXIS));
         topRightPanel.setBackground(getBackgroundColor());
@@ -93,7 +101,7 @@ public class CombatAchievementPanel extends JPanel {
         typeLabel.setText(achievement.getType() != null ? achievement.getType() : "Unknown");
 
         tierLabel.setFont(FontManager.getRunescapeSmallFont());
-        tierLabel.setForeground(achievement.getTierColor());
+        tierLabel.setForeground(getImprovedTierColor());
         tierLabel.setText(achievement.getTier() + " - " + achievement.getType());
 
         leftInfo.add(tierLabel);
@@ -125,6 +133,52 @@ public class CombatAchievementPanel extends JPanel {
         setToolTipText(createTooltip());
     }
 
+    // NEW: Setup tier icon based on achievement tier
+    private void setupTierIcon() {
+        try {
+            String tierName = achievement.getTier().toLowerCase();
+            String iconPath = tierName + "_tier.png";
+
+            BufferedImage originalIcon = ImageUtil.loadImageResource(CombatAchievementPanel.class, iconPath);
+            BufferedImage resizedIcon = ImageUtil.resizeImage(originalIcon, 16, 16);
+            tierIconLabel.setIcon(new ImageIcon(resizedIcon));
+            tierIconLabel.setToolTipText(achievement.getTier() + " Tier");
+        } catch (Exception e) {
+            log.warn("Could not load tier icon for {}: {}", achievement.getTier(), e.getMessage());
+            // Fallback: no icon
+            tierIconLabel.setIcon(null);
+        }
+    }
+
+    private Color getImprovedTierColor() {
+        switch (achievement.getTier().toLowerCase()) {
+            case "easy":
+                return new Color(205, 133, 63);
+            case "medium":
+                return new Color(169, 169, 169);
+            case "hard":
+                return new Color(105, 105, 105);
+            case "elite":
+                return new Color(70, 100, 150);
+            case "master":
+                return new Color(120, 70, 70);
+            case "grandmaster":
+                return new Color(255, 215, 0);
+            default:
+                return Color.WHITE;
+        }
+    }
+
+    private Color getNameColor() {
+        if (achievement.isCompleted()) {
+            return Color.GREEN;
+        } else if (achievement.isTracked()) {
+            return new Color(100, 149, 237);
+        } else {
+            return ColorScheme.BRAND_ORANGE;
+        }
+    }
+
     private void setupEventHandlers() {
         trackButton.addActionListener(e -> {
             achievement.setTracked(!achievement.isTracked());
@@ -136,6 +190,7 @@ public class CombatAchievementPanel extends JPanel {
             }
         });
 
+        // Right-click context menu
         addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
@@ -160,6 +215,7 @@ public class CombatAchievementPanel extends JPanel {
         popup.add(wikiItem);
         popup.addSeparator();
         JMenu difficultyMenu = new JMenu("Set Difficulty");
+        // Add "Unrated" option
         JMenuItem unratedItem = new JMenuItem("Unrated");
         unratedItem.addActionListener(event -> {
             achievement.setUserDifficulty(0);
@@ -176,6 +232,7 @@ public class CombatAchievementPanel extends JPanel {
             difficultyMenu.add(diffItem);
         }
         popup.add(difficultyMenu);
+        // Mark completed (for testing)
         if (!achievement.isCompleted()) {
             popup.addSeparator();
             JMenuItem completeItem = new JMenuItem("Mark as Completed (Test)");
@@ -228,18 +285,14 @@ public class CombatAchievementPanel extends JPanel {
     }
 
     private Color getBackgroundColor() {
-        if (achievement.isCompleted()) {
-            return new Color(0, 40, 20);
-        } else if (achievement.isTracked()) {
-            return new Color(0, 30, 40);
-        } else {
-            return ColorScheme.DARKER_GRAY_COLOR;
-        }
+        return ColorScheme.DARKER_GRAY_COLOR;
     }
 
+    // Method to update all panel backgrounds
     private void updateAllBackgrounds() {
         Color bgColor = getBackgroundColor();
 
+        // Only update backgrounds of panels INSIDE the bordered container
         container.setBackground(bgColor);
         body.setBackground(bgColor);
         topSection.setBackground(bgColor);
@@ -247,6 +300,14 @@ public class CombatAchievementPanel extends JPanel {
         topRightPanel.setBackground(bgColor);
         bottomSection.setBackground(bgColor);
         leftInfo.setBackground(bgColor);
+
+        // Also update the name with icon panel background
+        Component[] components = nameLabelPanel.getComponents();
+        for (Component comp : components) {
+            if (comp instanceof JPanel) {
+                comp.setBackground(bgColor);
+            }
+        }
     }
 
     private String createTooltip() {
@@ -278,9 +339,11 @@ public class CombatAchievementPanel extends JPanel {
     public void refresh() {
         SwingUtilities.invokeLater(() -> {
             nameLabel.setText("<html>" + achievement.getName() + "</html>");
-            nameLabel.setForeground(achievement.isCompleted() ? Color.GREEN : Color.WHITE);
+            nameLabel.setForeground(getNameColor());
 
-            container.setBorder(new LineBorder(achievement.getTierColor(), 1));
+            tierLabel.setForeground(getImprovedTierColor());
+
+            setupTierIcon();
 
             updateAllBackgrounds();
 
