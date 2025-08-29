@@ -53,7 +53,7 @@ public class CombatAchievementsPanel extends PluginPanel {
     private final JScrollPane contentScrollPane = new JScrollPane();
     private final JPanel contentContainer = new JPanel();
     private final JPanel bossHeaderPanel = new JPanel(new BorderLayout());
-    private final JButton backButton = new JButton("← Back to Bosses");
+    private final JButton backButton = new JButton("<");
     private final JLabel bossTitle = new JLabel();
 
     private final JLabel totalPointsLabel = new JLabel("Total Points: 0");
@@ -590,7 +590,7 @@ public class CombatAchievementsPanel extends PluginPanel {
             achievementPanels.clear();
 
             if (currentViewMode == ViewMode.BOSSES && selectedBoss != null) {
-                bossTitle.setText(selectedBoss + " Tasks");
+                bossTitle.setText(selectedBoss);
                 bossHeaderPanel.setVisible(true);
             } else {
                 bossHeaderPanel.setVisible(false);
