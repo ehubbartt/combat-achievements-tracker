@@ -1,4 +1,4 @@
-package com.catracker;
+package com.catracker.model;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -24,8 +24,6 @@ public class CombatAchievement
 
     private String bossName;
     private String type; // Kill Count, Perfection, Restriction, Mechanical, etc.
-    private boolean soloOnly;
-    private int userPriority; // 1-5 user assigned priority
     private int userDifficulty; // 1-5 user assigned difficulty
     private Float completionPercentage; // Wiki completion percentage
     private String wikiUrl;
@@ -44,9 +42,7 @@ public class CombatAchievement
         this.completedTimestamp = completed ? System.currentTimeMillis() : 0;
 
         // Set defaults
-        this.userPriority = 0; // Medium priority by default
         this.userDifficulty = 0; // Medium difficulty by default
-        this.soloOnly = true; // Most combat achievements are solo
     }
 
     /**

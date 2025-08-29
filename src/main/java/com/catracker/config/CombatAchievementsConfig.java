@@ -1,4 +1,4 @@
-package com.catracker;
+package com.catracker.config;
 
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
@@ -31,7 +31,6 @@ public interface CombatAchievementsConfig extends Config
             section = listSection,
             position = 2
     )
-
     default TierGoal tierGoal()
     {
         return TierGoal.TIER_AUTO;
@@ -62,8 +61,6 @@ public interface CombatAchievementsConfig extends Config
         return true;
     }
 
-
-    @ConfigGroup("combatachievements")
     enum TierGoal
     {
         TIER_AUTO("Auto"),
@@ -73,7 +70,6 @@ public interface CombatAchievementsConfig extends Config
         TIER_ELITE("Elite"),
         TIER_MASTER("Master"),
         TIER_GRANDMASTER("Grandmaster");
-
 
         private final String displayName;
 
