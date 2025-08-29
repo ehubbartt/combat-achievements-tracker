@@ -28,18 +28,21 @@ import java.util.stream.Collectors;
 public class CombatAchievementsPanel extends PluginPanel {
     private final CombatAchievementsPlugin plugin;
 
+    private ViewMode currentViewMode = ViewMode.ALL_TASKS;
     private boolean showingTrackedOnly = false;
     private boolean filtersExpanded = false;
     private boolean tiersExpanded = false;
     private boolean sortAscending = true;
+    private String selectedBoss = null;
 
     private final JTextField searchField = new JTextField();
     @Getter
     private final IconTextField searchBar;
     private final JPanel headerPanel = new JPanel(new BorderLayout());
-    private final JPanel viewButtonsPanel = new JPanel();
+    private final JPanel tabButtonsPanel = new JPanel();
     private final JButton allTasksButton = new JButton("All Tasks");
     private final JButton trackedTasksButton = new JButton("Tracked");
+    private final JButton bossesButton = new JButton("Bosses");
     private final JPanel filtersSection = new JPanel();
     private final JButton filtersToggleButton = new JButton("Filters v");
     private final JPanel filtersPanel = new JPanel();
@@ -47,8 +50,11 @@ public class CombatAchievementsPanel extends PluginPanel {
     private final JButton tiersToggleButton = new JButton("Tiers v");
     private final JPanel tiersPanel = new JPanel();
     private final JPanel statsPanel = new JPanel();
-    private final JScrollPane achievementsList = new JScrollPane();
-    private final JPanel achievementsContainer = new JPanel();
+    private final JScrollPane contentScrollPane = new JScrollPane();
+    private final JPanel contentContainer = new JPanel();
+    private final JPanel bossHeaderPanel = new JPanel(new BorderLayout());
+    private final JButton backButton = new JButton("← Back to Bosses");
+    private final JLabel bossTitle = new JLabel();
 
     private final JLabel totalPointsLabel = new JLabel("Total Points: 0");
     private final JLabel trackedPointsLabel = new JLabel("Tracked: 0");
@@ -67,6 +73,12 @@ public class CombatAchievementsPanel extends PluginPanel {
 
     private final Map<Integer, CombatAchievementPanel> achievementPanels = new HashMap<>();
 
+    private enum ViewMode {
+        ALL_TASKS,
+        TRACKED_TASKS,
+        BOSSES
+    }
+
     public CombatAchievementsPanel(CombatAchievementsPlugin plugin) {
         super(false);
         this.plugin = plugin;
@@ -76,7 +88,7 @@ public class CombatAchievementsPanel extends PluginPanel {
         layoutComponents();
         setupEventHandlers();
         loadSampleData();
-        refreshAchievementsList();
+        refreshContent();
     }
 
     private void initializeTierFilters() {
@@ -94,45 +106,55 @@ public class CombatAchievementsPanel extends PluginPanel {
         searchField.setForeground(Color.WHITE);
         searchField.setBorder(new EmptyBorder(5, 5, 5, 5));
 
-        setupViewButtons();
+        setupTabButtons();
         setupFilterDropdowns();
         setupStatsLabels();
+        setupBossHeader();
 
-        achievementsContainer.setLayout(new BoxLayout(achievementsContainer, BoxLayout.Y_AXIS));
-        achievementsContainer.setBackground(ColorScheme.DARK_GRAY_COLOR);
-        achievementsContainer.setBorder(new EmptyBorder(0, 10, 0, 10));
-        achievementsContainer.setAlignmentX(Component.LEFT_ALIGNMENT);
+        contentContainer.setLayout(new BoxLayout(contentContainer, BoxLayout.Y_AXIS));
+        contentContainer.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        contentContainer.setBorder(new EmptyBorder(0, 10, 0, 10));
+        contentContainer.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        achievementsList.setViewportView(achievementsContainer);
-        achievementsList.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        achievementsList.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-        achievementsList.setBackground(ColorScheme.DARK_GRAY_COLOR);
-        achievementsList.setBorder(null);
-        achievementsList.getVerticalScrollBar().setUnitIncrement(16);
+        contentScrollPane.setViewportView(contentContainer);
+        contentScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        contentScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+        contentScrollPane.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        contentScrollPane.setBorder(null);
+        contentScrollPane.getVerticalScrollBar().setUnitIncrement(16);
     }
 
-    private void setupViewButtons() {
+    private void setupTabButtons() {
         allTasksButton.setFont(FontManager.getRunescapeSmallFont());
         trackedTasksButton.setFont(FontManager.getRunescapeSmallFont());
+        bossesButton.setFont(FontManager.getRunescapeSmallFont());
 
-        styleToggleButton(allTasksButton, true);
-        styleToggleButton(trackedTasksButton, false);
+        styleTabButton(allTasksButton, true);
+        styleTabButton(trackedTasksButton, false);
+        styleTabButton(bossesButton, false);
 
-        viewButtonsPanel.setLayout(new GridLayout(1, 2, 2, 0));
-        viewButtonsPanel.setBorder(new EmptyBorder(5, 10, 8, 10));
-        viewButtonsPanel.add(allTasksButton);
-        viewButtonsPanel.add(trackedTasksButton);
+        tabButtonsPanel.setLayout(new GridLayout(1, 3, 1, 0));
+        tabButtonsPanel.setBorder(new EmptyBorder(5, 10, 8, 10));
+        tabButtonsPanel.add(allTasksButton);
+        tabButtonsPanel.add(trackedTasksButton);
+        tabButtonsPanel.add(bossesButton);
     }
 
-    private void styleToggleButton(JButton button, boolean selected) {
+    private void styleTabButton(JButton button, boolean selected) {
         if (selected) {
             button.setBackground(ColorScheme.BRAND_ORANGE);
             button.setForeground(Color.WHITE);
-            button.setBorder(new LineBorder(ColorScheme.BRAND_ORANGE_TRANSPARENT, 2));
+            button.setBorder(BorderFactory.createCompoundBorder(
+                    new LineBorder(ColorScheme.BRAND_ORANGE_TRANSPARENT, 2),
+                    new EmptyBorder(2, 4, 2, 4)
+            ));
         } else {
             button.setBackground(ColorScheme.DARKER_GRAY_COLOR);
             button.setForeground(Color.LIGHT_GRAY);
-            button.setBorder(new LineBorder(ColorScheme.MEDIUM_GRAY_COLOR, 1));
+            button.setBorder(BorderFactory.createCompoundBorder(
+                    new LineBorder(ColorScheme.MEDIUM_GRAY_COLOR, 1),
+                    new EmptyBorder(2, 4, 2, 4)
+            ));
         }
         button.setFocusPainted(false);
         button.setOpaque(true);
@@ -183,6 +205,29 @@ public class CombatAchievementsPanel extends PluginPanel {
         goalLabel.setForeground(Color.GREEN);
     }
 
+    private void setupBossHeader() {
+        bossHeaderPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        bossHeaderPanel.setBorder(new EmptyBorder(5, 10, 5, 10));
+        bossHeaderPanel.setVisible(false);
+
+        backButton.setFont(FontManager.getRunescapeSmallFont());
+        backButton.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        backButton.setForeground(Color.WHITE);
+        backButton.setBorder(new EmptyBorder(5, 10, 5, 10));
+        backButton.setFocusPainted(false);
+        backButton.addActionListener(e -> {
+            selectedBoss = null;
+            refreshContent();
+        });
+
+        bossTitle.setFont(FontManager.getRunescapeBoldFont());
+        bossTitle.setForeground(ColorScheme.BRAND_ORANGE);
+        bossTitle.setHorizontalAlignment(SwingConstants.CENTER);
+
+        bossHeaderPanel.add(backButton, BorderLayout.WEST);
+        bossHeaderPanel.add(bossTitle, BorderLayout.CENTER);
+    }
+
     private void layoutComponents() {
         JLabel titleLabel = new JLabel("Combat Achievements");
         titleLabel.setFont(FontManager.getRunescapeBoldFont());
@@ -197,17 +242,17 @@ public class CombatAchievementsPanel extends PluginPanel {
             @Override
             public void insertUpdate(DocumentEvent e) {
                 currentSearchText = searchBar.getText().toLowerCase();
-                refreshAchievementsList();
+                refreshContent();
             }
             @Override
             public void removeUpdate(DocumentEvent e) {
                 currentSearchText = searchBar.getText().toLowerCase();
-                refreshAchievementsList();
+                refreshContent();
             }
             @Override
             public void changedUpdate(DocumentEvent e) {
                 currentSearchText = searchBar.getText().toLowerCase();
-                refreshAchievementsList();
+                refreshContent();
             }
         });
 
@@ -221,7 +266,6 @@ public class CombatAchievementsPanel extends PluginPanel {
         setupStatsPanel();
         setupTiersSection();
         setupFiltersSection();
-        setupTasksSection();
 
         setLayout(new BorderLayout());
         setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -234,10 +278,11 @@ public class CombatAchievementsPanel extends PluginPanel {
         fixedContent.add(statsPanel);
         fixedContent.add(tiersSection);
         fixedContent.add(filtersSection);
-        fixedContent.add(viewButtonsPanel);
+        fixedContent.add(tabButtonsPanel);
+        fixedContent.add(bossHeaderPanel);
 
         add(fixedContent, BorderLayout.NORTH);
-        add(achievementsList, BorderLayout.CENTER);
+        add(contentScrollPane, BorderLayout.CENTER);
     }
 
     private void setupStatsPanel() {
@@ -337,7 +382,7 @@ public class CombatAchievementsPanel extends PluginPanel {
         button.addActionListener(e -> {
             selectedTiers.put(tier, button.isSelected());
             updateTierButtonAppearance(button, tier);
-            refreshAchievementsList();
+            refreshContent();
         });
 
         updateTierButtonAppearance(button, tier);
@@ -441,9 +486,6 @@ public class CombatAchievementsPanel extends PluginPanel {
         return row;
     }
 
-    private void setupTasksSection() {
-    }
-
     private void toggleTiers() {
         tiersExpanded = !tiersExpanded;
         tiersPanel.setVisible(tiersExpanded);
@@ -471,22 +513,35 @@ public class CombatAchievementsPanel extends PluginPanel {
     private void toggleSortDirection() {
         sortAscending = !sortAscending;
         sortDirectionButton.setText(sortAscending ? "^/v" : "v/^");
-        refreshAchievementsList();
+        refreshContent();
     }
 
     private void setupEventHandlers() {
         allTasksButton.addActionListener(e -> {
-            showingTrackedOnly = false;
-            styleToggleButton(allTasksButton, true);
-            styleToggleButton(trackedTasksButton, false);
-            refreshAchievementsList();
+            currentViewMode = ViewMode.ALL_TASKS;
+            selectedBoss = null;
+            styleTabButton(allTasksButton, true);
+            styleTabButton(trackedTasksButton, false);
+            styleTabButton(bossesButton, false);
+            refreshContent();
         });
 
         trackedTasksButton.addActionListener(e -> {
-            showingTrackedOnly = true;
-            styleToggleButton(allTasksButton, false);
-            styleToggleButton(trackedTasksButton, true);
-            refreshAchievementsList();
+            currentViewMode = ViewMode.TRACKED_TASKS;
+            selectedBoss = null;
+            styleTabButton(allTasksButton, false);
+            styleTabButton(trackedTasksButton, true);
+            styleTabButton(bossesButton, false);
+            refreshContent();
+        });
+
+        bossesButton.addActionListener(e -> {
+            currentViewMode = ViewMode.BOSSES;
+            selectedBoss = null;
+            styleTabButton(allTasksButton, false);
+            styleTabButton(trackedTasksButton, false);
+            styleTabButton(bossesButton, true);
+            refreshContent();
         });
 
         tiersToggleButton.addActionListener(e -> toggleTiers());
@@ -495,16 +550,16 @@ public class CombatAchievementsPanel extends PluginPanel {
 
         sortDirectionButton.addActionListener(e -> toggleSortDirection());
 
-        tierFilter.addActionListener(e -> refreshAchievementsList());
-        statusFilter.addActionListener(e -> refreshAchievementsList());
-        typeFilter.addActionListener(e -> refreshAchievementsList());
-        sortFilter.addActionListener(e -> refreshAchievementsList());
+        tierFilter.addActionListener(e -> refreshContent());
+        statusFilter.addActionListener(e -> refreshContent());
+        typeFilter.addActionListener(e -> refreshContent());
+        sortFilter.addActionListener(e -> refreshContent());
 
         searchField.addKeyListener(new KeyAdapter() {
             @Override
             public void keyReleased(KeyEvent e) {
                 currentSearchText = searchField.getText().toLowerCase();
-                refreshAchievementsList();
+                refreshContent();
             }
         });
     }
@@ -520,60 +575,270 @@ public class CombatAchievementsPanel extends PluginPanel {
             achievementPanels.clear();
 
             loadTrackedAchievements();
-            refreshAchievementsList();
-            log.info("refreshAchievementsList completed");
+            refreshContent();
+            log.info("refreshContent completed");
         });
     }
 
-    private void refreshAchievementsList() {
-        refreshAchievementsList(true);
+    private void refreshContent() {
+        refreshContent(true);
     }
 
-    private void refreshAchievementsList(boolean resetScrollPosition) {
+    private void refreshContent(boolean resetScrollPosition) {
         SwingUtilities.invokeLater(() -> {
-            achievementsContainer.removeAll();
+            contentContainer.removeAll();
             achievementPanels.clear();
 
-            List<CombatAchievement> baseList = showingTrackedOnly ? trackedAchievements : allAchievements;
-            List<CombatAchievement> filteredAchievements = getFilteredAchievements(baseList);
-
-            if (filteredAchievements.isEmpty()) {
-                String emptyMessage = showingTrackedOnly ?
-                        "No tracked achievements match current filters" :
-                        "No achievements match current filters";
-
-                JLabel emptyLabel = new JLabel(emptyMessage);
-                emptyLabel.setFont(FontManager.getRunescapeSmallFont());
-                emptyLabel.setForeground(Color.GRAY);
-                emptyLabel.setHorizontalAlignment(JLabel.CENTER);
-                emptyLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-                emptyLabel.setBorder(new EmptyBorder(20, 10, 20, 10));
-                achievementsContainer.add(emptyLabel);
+            if (currentViewMode == ViewMode.BOSSES && selectedBoss != null) {
+                bossTitle.setText(selectedBoss + " Tasks");
+                bossHeaderPanel.setVisible(true);
             } else {
-                for (CombatAchievement achievement : filteredAchievements) {
-                    try {
-                        CombatAchievementPanel panel = new CombatAchievementPanel(plugin, achievement);
-                        achievementPanels.put(achievement.getId(), panel);
+                bossHeaderPanel.setVisible(false);
+            }
 
-                        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, panel.getPreferredSize().height));
-                        panel.setAlignmentX(Component.CENTER_ALIGNMENT);
-                        achievementsContainer.add(panel);
-                    } catch (Exception e) {
-                        log.error("Error creating panel for achievement: {}", achievement.getName(), e);
+            switch (currentViewMode) {
+                case BOSSES:
+                    if (selectedBoss == null) {
+                        displayBossGrid();
+                    } else {
+                        displayBossAchievements();
                     }
-                }
+                    break;
+                case ALL_TASKS:
+                case TRACKED_TASKS:
+                    displayAchievementsList();
+                    break;
             }
 
             updateStats();
-            achievementsContainer.revalidate();
-            achievementsContainer.repaint();
+            contentContainer.revalidate();
+            contentContainer.repaint();
 
             if (resetScrollPosition) {
                 SwingUtilities.invokeLater(() -> {
-                    achievementsList.getVerticalScrollBar().setValue(0);
+                    contentScrollPane.getVerticalScrollBar().setValue(0);
                 });
             }
         });
+    }
+
+    private void displayBossGrid() {
+        Map<String, BossStats> bossStatsMap = calculateBossStats();
+
+        if (bossStatsMap.isEmpty()) {
+            JLabel emptyLabel = new JLabel("No boss data available");
+            emptyLabel.setFont(FontManager.getRunescapeSmallFont());
+            emptyLabel.setForeground(Color.GRAY);
+            emptyLabel.setHorizontalAlignment(JLabel.CENTER);
+            emptyLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            emptyLabel.setBorder(new EmptyBorder(20, 10, 20, 10));
+            contentContainer.add(emptyLabel);
+            return;
+        }
+
+        JPanel gridPanel = new JPanel();
+        gridPanel.setLayout(new BoxLayout(gridPanel, BoxLayout.Y_AXIS));
+        gridPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        gridPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        List<String> sortedBosses = bossStatsMap.keySet().stream()
+                .filter(boss -> boss != null && !boss.equals("Unknown") && !boss.trim().isEmpty())
+                .filter(boss -> matchesBossSearch(boss))
+                .sorted()
+                .collect(Collectors.toList());
+
+        if (sortedBosses.isEmpty()) {
+            JLabel emptyLabel = new JLabel("No bosses match search criteria");
+            emptyLabel.setFont(FontManager.getRunescapeSmallFont());
+            emptyLabel.setForeground(Color.GRAY);
+            emptyLabel.setHorizontalAlignment(JLabel.CENTER);
+            emptyLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            emptyLabel.setBorder(new EmptyBorder(20, 10, 20, 10));
+            contentContainer.add(emptyLabel);
+            return;
+        }
+
+        for (int i = 0; i < sortedBosses.size(); i += 2) {
+            JPanel rowPanel = new JPanel(new GridLayout(1, 2, 10, 0));
+            rowPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
+            rowPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
+            rowPanel.setBorder(new EmptyBorder(5, 0, 5, 0));
+
+            String boss1 = sortedBosses.get(i);
+            BossStats stats1 = bossStatsMap.get(boss1);
+            rowPanel.add(createBossCard(boss1, stats1));
+
+            if (i + 1 < sortedBosses.size()) {
+                String boss2 = sortedBosses.get(i + 1);
+                BossStats stats2 = bossStatsMap.get(boss2);
+                rowPanel.add(createBossCard(boss2, stats2));
+            } else {
+                JPanel emptyCard = new JPanel();
+                emptyCard.setBackground(ColorScheme.DARK_GRAY_COLOR);
+                rowPanel.add(emptyCard);
+            }
+
+            gridPanel.add(rowPanel);
+        }
+
+        contentContainer.add(gridPanel);
+    }
+
+    private JPanel createBossCard(String bossName, BossStats stats) {
+        JPanel card = new JPanel();
+        card.setLayout(new BorderLayout());
+        card.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        card.setBorder(new LineBorder(ColorScheme.MEDIUM_GRAY_COLOR, 1));
+        card.setPreferredSize(new Dimension(0, 70));
+        card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        JLabel nameLabel = new JLabel(bossName);
+        nameLabel.setFont(FontManager.getRunescapeSmallFont());
+        nameLabel.setForeground(ColorScheme.BRAND_ORANGE);
+        nameLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        nameLabel.setBorder(new EmptyBorder(8, 5, 2, 5));
+
+        JLabel progressLabel = new JLabel(stats.completed + "/" + stats.total);
+        progressLabel.setFont(FontManager.getRunescapeSmallFont());
+        progressLabel.setForeground(Color.WHITE);
+        progressLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        JProgressBar progressBar = new JProgressBar(0, stats.total);
+        progressBar.setValue(stats.completed);
+        progressBar.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        progressBar.setForeground(stats.completed == stats.total ? Color.GREEN :
+                stats.completed > 0 ? Color.YELLOW : Color.GRAY);
+        progressBar.setBorderPainted(false);
+        progressBar.setPreferredSize(new Dimension(0, 4));
+
+        JPanel bottomSection = new JPanel(new BorderLayout());
+        bottomSection.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        bottomSection.add(progressLabel, BorderLayout.CENTER);
+        bottomSection.add(progressBar, BorderLayout.SOUTH);
+        bottomSection.setBorder(new EmptyBorder(0, 5, 8, 5));
+
+        card.add(nameLabel, BorderLayout.NORTH);
+        card.add(bottomSection, BorderLayout.SOUTH);
+
+        card.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                selectedBoss = bossName;
+                refreshContent();
+            }
+
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                card.setBackground(ColorScheme.DARK_GRAY_HOVER_COLOR);
+            }
+
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                card.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+            }
+        });
+
+        return card;
+    }
+
+    private void displayBossAchievements() {
+        if (selectedBoss == null) {
+            displayBossGrid();
+            return;
+        }
+
+        List<CombatAchievement> bossAchievements = allAchievements.stream()
+                .filter(achievement -> selectedBoss.equals(achievement.getBossName()))
+                .collect(Collectors.toList());
+
+        List<CombatAchievement> filteredAchievements = getFilteredAchievements(bossAchievements);
+
+        if (filteredAchievements.isEmpty()) {
+            JLabel emptyLabel = new JLabel("No achievements found for " + selectedBoss);
+            emptyLabel.setFont(FontManager.getRunescapeSmallFont());
+            emptyLabel.setForeground(Color.GRAY);
+            emptyLabel.setHorizontalAlignment(JLabel.CENTER);
+            emptyLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            emptyLabel.setBorder(new EmptyBorder(20, 10, 20, 10));
+            contentContainer.add(emptyLabel);
+        } else {
+            for (CombatAchievement achievement : filteredAchievements) {
+                try {
+                    CombatAchievementPanel panel = new CombatAchievementPanel(plugin, achievement);
+                    achievementPanels.put(achievement.getId(), panel);
+
+                    panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, panel.getPreferredSize().height));
+                    panel.setAlignmentX(Component.CENTER_ALIGNMENT);
+                    contentContainer.add(panel);
+                } catch (Exception e) {
+                    log.error("Error creating panel for achievement: {}", achievement.getName(), e);
+                }
+            }
+        }
+    }
+
+    private void displayAchievementsList() {
+        List<CombatAchievement> baseList = currentViewMode == ViewMode.TRACKED_TASKS ? trackedAchievements : allAchievements;
+        List<CombatAchievement> filteredAchievements = getFilteredAchievements(baseList);
+
+        if (filteredAchievements.isEmpty()) {
+            String emptyMessage = currentViewMode == ViewMode.TRACKED_TASKS ?
+                    "No tracked achievements match current filters" :
+                    "No achievements match current filters";
+
+            JLabel emptyLabel = new JLabel(emptyMessage);
+            emptyLabel.setFont(FontManager.getRunescapeSmallFont());
+            emptyLabel.setForeground(Color.GRAY);
+            emptyLabel.setHorizontalAlignment(JLabel.CENTER);
+            emptyLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            emptyLabel.setBorder(new EmptyBorder(20, 10, 20, 10));
+            contentContainer.add(emptyLabel);
+        } else {
+            for (CombatAchievement achievement : filteredAchievements) {
+                try {
+                    CombatAchievementPanel panel = new CombatAchievementPanel(plugin, achievement);
+                    achievementPanels.put(achievement.getId(), panel);
+
+                    panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, panel.getPreferredSize().height));
+                    panel.setAlignmentX(Component.CENTER_ALIGNMENT);
+                    contentContainer.add(panel);
+                } catch (Exception e) {
+                    log.error("Error creating panel for achievement: {}", achievement.getName(), e);
+                }
+            }
+        }
+    }
+
+    private Map<String, BossStats> calculateBossStats() {
+        Map<String, BossStats> bossStatsMap = new HashMap<>();
+
+        for (CombatAchievement achievement : allAchievements) {
+            String bossName = achievement.getBossName();
+            if (bossName == null || bossName.equals("Unknown") || bossName.trim().isEmpty()) {
+                continue;
+            }
+
+            bossStatsMap.putIfAbsent(bossName, new BossStats());
+            BossStats stats = bossStatsMap.get(bossName);
+            stats.total++;
+            if (achievement.isCompleted()) {
+                stats.completed++;
+            }
+        }
+
+        return bossStatsMap;
+    }
+
+    private boolean matchesBossSearch(String bossName) {
+        if (currentSearchText.isEmpty()) {
+            return true;
+        }
+        return bossName.toLowerCase().contains(currentSearchText);
+    }
+
+    private static class BossStats {
+        int total = 0;
+        int completed = 0;
     }
 
     private List<CombatAchievement> getFilteredAchievements(List<CombatAchievement> sourceList) {
@@ -665,7 +930,21 @@ public class CombatAchievementsPanel extends PluginPanel {
     }
 
     private void updateStats() {
-        List<CombatAchievement> visibleAchievements = showingTrackedOnly ? trackedAchievements : getFilteredAchievements(allAchievements);
+        if (currentViewMode == ViewMode.BOSSES && selectedBoss == null) {
+            updateBossStats();
+            return;
+        }
+
+        List<CombatAchievement> visibleAchievements;
+        if (currentViewMode == ViewMode.TRACKED_TASKS) {
+            visibleAchievements = trackedAchievements;
+        } else if (selectedBoss != null) {
+            visibleAchievements = allAchievements.stream()
+                    .filter(achievement -> selectedBoss.equals(achievement.getBossName()))
+                    .collect(Collectors.toList());
+        } else {
+            visibleAchievements = getFilteredAchievements(allAchievements);
+        }
 
         int totalCompletedPoints = allAchievements.stream()
                 .filter(CombatAchievement::isCompleted)
@@ -694,7 +973,7 @@ public class CombatAchievementsPanel extends PluginPanel {
         int pointGoal = getPointsFromGoal(tierGoal, totalCompletedPoints);
         String actualTierName = getActualTierName(tierGoal, totalCompletedPoints);
 
-        String viewContext = showingTrackedOnly ? "tracked" : "filtered";
+        String viewContext = getViewContext();
 
         totalPointsLabel.setText("Total: " + completedPoints + "/" + totalPoints + " pts" +
                 " (" + visibleAchievements.size() + " " + viewContext + ")");
@@ -707,6 +986,55 @@ public class CombatAchievementsPanel extends PluginPanel {
         } else {
             int remainingPoints = pointGoal - totalCompletedPoints;
             goalLabel.setText("Goal: " + remainingPoints + " pts to " + actualTierName);
+        }
+    }
+
+    private void updateBossStats() {
+        Map<String, BossStats> bossStatsMap = calculateBossStats();
+
+        int totalBosses = bossStatsMap.size();
+        int completedBosses = (int) bossStatsMap.values().stream()
+                .filter(stats -> stats.completed == stats.total && stats.total > 0)
+                .count();
+
+        totalPointsLabel.setText("Bosses: " + completedBosses + "/" + totalBosses + " complete");
+
+        int totalTrackedPoints = trackedAchievements.stream()
+                .mapToInt(CombatAchievement::getPoints)
+                .sum();
+
+        int completedTrackedPoints = trackedAchievements.stream()
+                .filter(CombatAchievement::isCompleted)
+                .mapToInt(CombatAchievement::getPoints)
+                .sum();
+
+        trackedPointsLabel.setText("Tracked: " + completedTrackedPoints + "/" +
+                totalTrackedPoints + " pts (" + trackedAchievements.size() + " tasks)");
+
+        int totalCompletedPoints = allAchievements.stream()
+                .filter(CombatAchievement::isCompleted)
+                .mapToInt(CombatAchievement::getPoints)
+                .sum();
+
+        CombatAchievementsConfig.TierGoal tierGoal = plugin.getTierGoal();
+        int pointGoal = getPointsFromGoal(tierGoal, totalCompletedPoints);
+        String actualTierName = getActualTierName(tierGoal, totalCompletedPoints);
+
+        if (totalCompletedPoints >= pointGoal) {
+            goalLabel.setText("Goal: " + actualTierName + " Completed! (" + totalCompletedPoints + " pts)");
+        } else {
+            int remainingPoints = pointGoal - totalCompletedPoints;
+            goalLabel.setText("Goal: " + remainingPoints + " pts to " + actualTierName);
+        }
+    }
+
+    private String getViewContext() {
+        if (selectedBoss != null) {
+            return selectedBoss + " tasks";
+        } else if (currentViewMode == ViewMode.TRACKED_TASKS) {
+            return "tracked";
+        } else {
+            return "filtered";
         }
     }
 
@@ -826,13 +1154,13 @@ public class CombatAchievementsPanel extends PluginPanel {
         clearAllConfigData();
         trackedAchievements.clear();
         updateStats();
-        refreshAchievementsList();
+        refreshContent();
         log.info("All tracked achievements cleared");
     }
 
     public void onAchievementCompleted(String message) {
         log.info("Achievement completed notification: {}", message);
-        refreshAchievementsList();
+        refreshContent();
     }
 
     public void addToTracked(CombatAchievement achievement) {
@@ -874,9 +1202,9 @@ public class CombatAchievementsPanel extends PluginPanel {
             updateStatsOnly();
             saveTrackedAchievements();
 
-            if (showingTrackedOnly) {
+            if (currentViewMode == ViewMode.TRACKED_TASKS) {
                 log.debug("In tracked view - rebuilding list to remove untracked item");
-                refreshAchievementsList(false);
+                refreshContent(false);
             }
         } else {
             log.warn("Achievement {} (ID: {}) was not in tracked list!", achievement.getName(), achievement.getId());
@@ -884,11 +1212,11 @@ public class CombatAchievementsPanel extends PluginPanel {
     }
 
     private void loadSampleData() {
-        allAchievements.add(new CombatAchievement(1, "Just Getting Started", "bossname","test", "Kill any boss", "Easy", 1, false, false));
-        allAchievements.add(new CombatAchievement(2, "Squashing Foot Soldiers","bossname", "test","Kill 5 goblins", "Easy", 1, false, false));
-        allAchievements.add(new CombatAchievement(3, "Giant Mole Hunter","bossname","test", "Kill the Giant Mole", "Medium", 2, false, false));
-        allAchievements.add(new CombatAchievement(4, "Barrows Champion","bossname","test", "Complete all Barrows brothers", "Hard", 4, false, false));
-        allAchievements.add(new CombatAchievement(5, "Zuk Slayer","bossname","test", "Complete the Inferno", "Master", 6, false, false));
+        allAchievements.add(new CombatAchievement(1, "Just Getting Started", "General","test", "Kill any boss", "Easy", 1, false, false));
+        allAchievements.add(new CombatAchievement(2, "Squashing Foot Soldiers","General", "test","Kill 5 goblins", "Easy", 1, false, false));
+        allAchievements.add(new CombatAchievement(3, "Giant Mole Hunter","Giant Mole","test", "Kill the Giant Mole", "Medium", 2, false, false));
+        allAchievements.add(new CombatAchievement(4, "Barrows Champion","Barrows","test", "Complete all Barrows brothers", "Hard", 4, false, false));
+        allAchievements.add(new CombatAchievement(5, "Zuk Slayer","TzKal-Zuk","test", "Complete the Inferno", "Master", 6, false, false));
     }
 
     public void refreshCombatAchievements() {
