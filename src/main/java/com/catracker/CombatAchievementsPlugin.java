@@ -163,7 +163,8 @@ public class CombatAchievementsPlugin extends Plugin
 	{
 		log.info("Combat achievement completed: {}", message);
 
-		SwingUtilities.invokeLater(() -> {
+		SwingUtilities.invokeLater(() ->
+		{
 			if (panel != null)
 			{
 				panel.onAchievementCompleted(message);

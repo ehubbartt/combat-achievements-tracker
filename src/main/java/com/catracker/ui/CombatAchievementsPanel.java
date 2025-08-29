@@ -185,7 +185,8 @@ public class CombatAchievementsPanel extends PluginPanel
 		backButton.setForeground(Color.WHITE);
 		backButton.setBorder(new EmptyBorder(5, 10, 5, 10));
 		backButton.setFocusPainted(false);
-		backButton.addActionListener(e -> {
+		backButton.addActionListener(e ->
+		{
 			selectedBoss = null;
 			refreshContent();
 		});
@@ -272,7 +273,8 @@ public class CombatAchievementsPanel extends PluginPanel
 	public void updateAchievements(List<CombatAchievement> newAchievements)
 	{
 		log.info("updateAchievements called with {} achievements", newAchievements.size());
-		SwingUtilities.invokeLater(() -> {
+		SwingUtilities.invokeLater(() ->
+		{
 			allAchievements.clear();
 			allAchievements.addAll(newAchievements);
 			achievementPanels.clear();
@@ -289,7 +291,8 @@ public class CombatAchievementsPanel extends PluginPanel
 
 	private void refreshContent(boolean resetScrollPosition)
 	{
-		SwingUtilities.invokeLater(() -> {
+		SwingUtilities.invokeLater(() ->
+		{
 			contentContainer.removeAll();
 			achievementPanels.clear();
 
@@ -327,7 +330,8 @@ public class CombatAchievementsPanel extends PluginPanel
 
 			if (resetScrollPosition)
 			{
-				SwingUtilities.invokeLater(() -> {
+				SwingUtilities.invokeLater(() ->
+				{
 					contentScrollPane.getVerticalScrollBar().setValue(0);
 				});
 			}
@@ -454,7 +458,8 @@ public class CombatAchievementsPanel extends PluginPanel
 					}
 					break;
 				default:
-					filtered.sort((a, b) -> {
+					filtered.sort((a, b) ->
+					{
 						int tierComparison = Integer.compare(a.getTierLevel().getOrder(), b.getTierLevel().getOrder());
 						return tierComparison == 0 ? a.getName().compareTo(b.getName()) : tierComparison;
 					});

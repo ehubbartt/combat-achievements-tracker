@@ -1,9 +1,7 @@
 package com.catracker.ui.components;
-
 import com.catracker.ui.util.IconLoader;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
@@ -158,7 +156,8 @@ public class FilterPanel extends JPanel
 		}
 
 		button.setToolTipText(tier + " Tier");
-		button.addActionListener(e -> {
+		button.addActionListener(e ->
+		{
 			selectedTiers.put(tier, button.isSelected());
 			updateTierButtonAppearance(button, tier);
 			triggerRefresh();

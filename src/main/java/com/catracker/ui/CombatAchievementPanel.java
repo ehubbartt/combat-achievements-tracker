@@ -6,14 +6,12 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
-import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.SwingUtil;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.image.BufferedImage;
 import java.net.URI;
 
 @Slf4j
@@ -175,7 +173,8 @@ public class CombatAchievementPanel extends JPanel
 
 	private void setupEventHandlers()
 	{
-		trackButton.addActionListener(e -> {
+		trackButton.addActionListener(e ->
+		{
 			achievement.setTracked(!achievement.isTracked());
 			updateTrackButton();
 			if (achievement.isTracked())
@@ -211,6 +210,7 @@ public class CombatAchievementPanel extends JPanel
 		});
 	}
 
+	@SuppressWarnings("checkstyle:LeftCurly")
 	private void showContextMenu(MouseEvent e)
 	{
 		JPopupMenu popup = new JPopupMenu();
@@ -223,7 +223,8 @@ public class CombatAchievementPanel extends JPanel
 		if (!achievement.isCompleted())
 		{
 			JMenuItem completeItem = new JMenuItem("Mark as Completed (Test)");
-			completeItem.addActionListener(event -> {
+			completeItem.addActionListener(event ->
+			{
 				achievement.markCompleted();
 				refresh();
 			});
@@ -347,9 +348,11 @@ public class CombatAchievementPanel extends JPanel
 		return tooltip.toString();
 	}
 
+	@SuppressWarnings("checkstyle:LeftCurly")
 	public void refresh()
 	{
-		SwingUtilities.invokeLater(() -> {
+		SwingUtilities.invokeLater(() ->
+		{
 			nameLabel.setText("<html>" + achievement.getName() + "</html>");
 			nameLabel.setForeground(getNameColor());
 

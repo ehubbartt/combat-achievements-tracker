@@ -90,7 +90,8 @@ public class CombatAchievementsDataLoader
 			return;
 		}
 
-		clientThread.invokeLater(() -> {
+		clientThread.invokeLater(() ->
+		{
 			try
 			{
 				log.info("Loading Combat Achievements from client data...");
@@ -152,7 +153,8 @@ public class CombatAchievementsDataLoader
 
 				final List<CombatAchievement> finalAchievements = achievements;
 
-				SwingUtilities.invokeLater(() -> {
+				SwingUtilities.invokeLater(() ->
+				{
 					if (panel != null)
 					{
 						panel.updateAchievements(finalAchievements);
