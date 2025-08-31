@@ -1,27 +1,3 @@
-/*
- * Copyright (c) 2025, Ethan Hubbartt <ehubbartt@gmail.com>
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
 package com.catracker.util;
 
 import com.catracker.model.CombatAchievement;
@@ -36,6 +12,7 @@ import javax.swing.SwingUtilities;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 @Slf4j
 public class CombatAchievementsDataLoader
@@ -46,6 +23,7 @@ public class CombatAchievementsDataLoader
 
 	private boolean needsDataLoad = false;
 	private boolean dataLoadRequested = false;
+	private Consumer<List<CombatAchievement>> onDataLoadComplete;
 
 	private static final Map<Integer, String> TIER_MAP = Map.of(
 		3981, "Easy",
@@ -95,6 +73,12 @@ public class CombatAchievementsDataLoader
 		dataLoadRequested = false;
 	}
 
+	public void requestManualRefresh(Consumer<List<CombatAchievement>> callback)
+	{
+		this.onDataLoadComplete = callback;
+		requestManualRefresh();
+	}
+
 	public void handleGameTick(CombatAchievementsPanel panel)
 	{
 		if (needsDataLoad && !dataLoadRequested)
@@ -120,7 +104,6 @@ public class CombatAchievementsDataLoader
 			{
 				log.info("Loading Combat Achievements from client data...");
 				List<CombatAchievement> achievements = new ArrayList<>();
-				int totalLoaded = 0;
 
 				for (Map.Entry<Integer, String> tierEntry : TIER_MAP.entrySet())
 				{
@@ -171,7 +154,6 @@ public class CombatAchievementsDataLoader
 						);
 
 						achievements.add(achievement);
-						totalLoaded++;
 					}
 				}
 
@@ -183,6 +165,13 @@ public class CombatAchievementsDataLoader
 					{
 						panel.updateAchievements(finalAchievements);
 					}
+
+					// Call completion callback if set
+					if (onDataLoadComplete != null)
+					{
+						onDataLoadComplete.accept(finalAchievements);
+						onDataLoadComplete = null; // Clear callback after use
+					}
 				});
 
 				dataLoadRequested = false;
@@ -191,6 +180,7 @@ public class CombatAchievementsDataLoader
 			{
 				log.error("Failed to load Combat Achievements from client", e);
 				dataLoadRequested = false;
+				onDataLoadComplete = null; // Clear callback on error
 			}
 		});
 	}

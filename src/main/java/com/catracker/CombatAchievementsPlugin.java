@@ -31,6 +31,7 @@ import javax.swing.SwingUtilities;
 import com.catracker.config.CombatAchievementsConfig;
 import com.catracker.ui.CombatAchievementsPanel;
 import com.catracker.util.CombatAchievementsDataLoader;
+import com.catracker.util.ChatMessageUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
@@ -40,6 +41,7 @@ import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
@@ -64,6 +66,7 @@ public class CombatAchievementsPlugin extends Plugin
 	@Inject
 	private ClientThread clientThread;
 
+	@Getter
 	@Inject
 	private CombatAchievementsConfig config;
 
@@ -74,11 +77,17 @@ public class CombatAchievementsPlugin extends Plugin
 	@Inject
 	private ClientToolbar clientToolbar;
 
+	@Inject
+	private ChatMessageManager chatMessageManager;
+
 	@Getter
 	private CombatAchievementsPanel panel;
 
 	@Getter
 	private CombatAchievementsDataLoader dataLoader;
+
+	@Getter
+	private ChatMessageUtil chatMessageUtil;
 
 	private NavigationButton navigationButton;
 
@@ -88,6 +97,7 @@ public class CombatAchievementsPlugin extends Plugin
 		log.info("Combat Achievements Tracker starting up...");
 
 		dataLoader = new CombatAchievementsDataLoader(client, clientThread);
+		chatMessageUtil = new ChatMessageUtil(chatMessageManager, client);
 		panel = new CombatAchievementsPanel(this);
 		log.info("Panel created successfully");
 
@@ -192,6 +202,18 @@ public class CombatAchievementsPlugin extends Plugin
 			if (panel != null)
 			{
 				panel.onAchievementCompleted(message);
+
+				// Send progress chat message if enabled - wait for data refresh to complete
+				if (config.showGoalProgress())
+				{
+					dataLoader.requestManualRefresh(achievements ->
+					{
+						SwingUtilities.invokeLater(() ->
+						{
+							chatMessageUtil.sendProgressMessage(achievements, getTierGoal());
+						});
+					});
+				}
 			}
 		});
 	}

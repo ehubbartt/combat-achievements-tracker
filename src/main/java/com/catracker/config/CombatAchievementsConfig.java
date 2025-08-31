@@ -61,26 +61,38 @@ public interface CombatAchievementsConfig extends Config
 	}
 
 	// Notifications
-	@ConfigItem(
-		keyName = "showProgressNotifications",
-		name = "Show Progress Notifications",
-		description = "Show notifications when completing achievements",
-		section = notificationSection,
-		position = 0
-	)
-	default boolean showProgressNotifications()
-	{
-		return true;
-	}
+//	@ConfigItem(
+//		keyName = "showProgressNotifications",
+//		name = "Show Progress Notifications",
+//		description = "Show notifications when completing achievements",
+//		section = notificationSection,
+//		position = 0
+//	)
+//	default boolean showProgressNotifications()
+//	{
+//		return true;
+//	}
+
+//	@ConfigItem(
+//		keyName = "showChatMessages",
+//		name = "Show Chat Messages",
+//		description = "Show progress messages in chat",
+//		section = notificationSection,
+//		position = 1
+//	)
+//	default boolean showChatMessages()
+//	{
+//		return true;
+//	}
 
 	@ConfigItem(
-		keyName = "showChatMessages",
-		name = "Show Chat Messages",
-		description = "Show progress messages in chat",
+		keyName = "showGoalProgress",
+		name = "Show Goal Progress",
+		description = "Send chat message showing progress towards your tier goal when completing achievements",
 		section = notificationSection,
-		position = 1
+		position = 2
 	)
-	default boolean showChatMessages()
+	default boolean showGoalProgress()
 	{
 		return true;
 	}

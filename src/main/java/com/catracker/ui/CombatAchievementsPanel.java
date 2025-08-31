@@ -685,6 +685,20 @@ public class CombatAchievementsPanel extends PluginPanel
 		}
 	}
 
+	public void clearAllTracked()
+	{
+		log.info("Manually clearing all tracked achievements. Current size: {}", trackedAchievements.size());
+		for (CombatAchievement achievement : new ArrayList<>(trackedAchievements))
+		{
+			achievement.setTracked(false);
+		}
+		clearAllConfigData();
+		trackedAchievements.clear();
+		updateStats();
+		refreshContent();
+		log.info("All tracked achievements cleared");
+	}
+
 	public void onAchievementCompleted(String message)
 	{
 		log.info("Achievement completed notification: {}", message);
@@ -744,11 +758,20 @@ public class CombatAchievementsPanel extends PluginPanel
 
 	private void loadSampleData()
 	{
-//		allAchievements.add(new CombatAchievement(1, "Just Getting Started", "General", "test", "Kill any boss", "Easy", 1, false, false));
-//		allAchievements.add(new CombatAchievement(2, "Squashing Foot Soldiers", "General", "test", "Kill 5 goblins", "Easy", 1, false, false));
-//		allAchievements.add(new CombatAchievement(3, "Giant Mole Hunter", "Giant Mole", "test", "Kill the Giant Mole", "Medium", 2, false, false));
-//		allAchievements.add(new CombatAchievement(4, "Barrows Champion", "Barrows", "test", "Complete all Barrows brothers", "Hard", 4, false, false));
-//		allAchievements.add(new CombatAchievement(5, "Zuk Slayer", "TzKal-Zuk", "test", "Complete the Inferno", "Master", 6, false, false));
+//		allAchievements.add(new CombatAchievement(1, "Just Getting Started", "General","test", "Kill any boss", "Easy", 1, false, false));
+//		allAchievements.add(new CombatAchievement(2, "Squashing Foot Soldiers","General", "test","Kill 5 goblins", "Easy", 1, false, false));
+//		allAchievements.add(new CombatAchievement(3, "Giant Mole Hunter","Giant Mole","test", "Kill the Giant Mole", "Medium", 2, false, false));
+//		allAchievements.add(new CombatAchievement(4, "Barrows Champion","Barrows","test", "Complete all Barrows brothers", "Hard", 4, false, false));
+//		allAchievements.add(new CombatAchievement(5, "Zuk Slayer","TzKal-Zuk","test", "Complete the Inferno", "Master", 6, false, false));
 	}
 
+	public void refreshCombatAchievements()
+	{
+		plugin.refreshCombatAchievements();
+	}
+
+	public List<CombatAchievement> getAllAchievements()
+	{
+		return allAchievements;
+	}
 }
