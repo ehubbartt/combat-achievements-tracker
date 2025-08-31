@@ -33,6 +33,7 @@ import com.catracker.ui.components.FilterPanel;
 import com.catracker.ui.components.StatsPanel;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import javax.inject.Inject;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.ui.ColorScheme;
@@ -60,6 +61,9 @@ public class CombatAchievementsPanel extends PluginPanel
 
 	private ViewMode currentViewMode = ViewMode.ALL_TASKS;
 	private String selectedBoss = null;
+
+	@Inject
+	private Gson gson;
 
 	// UI Components
 	@Getter
@@ -615,7 +619,7 @@ public class CombatAchievementsPanel extends PluginPanel
 			List<Integer> trackedIds = trackedAchievements.stream()
 				.map(CombatAchievement::getId)
 				.collect(Collectors.toList());
-			String trackedJson = new Gson().toJson(trackedIds);
+			String trackedJson = gson.toJson(trackedIds);
 			log.info("JSON to save: '{}'", trackedJson);
 			try
 			{
@@ -653,7 +657,7 @@ public class CombatAchievementsPanel extends PluginPanel
 				Type listType = new TypeToken<List<Integer>>()
 				{
 				}.getType();
-				List<Integer> configTrackedIds = new Gson().fromJson(configJson, listType);
+				List<Integer> configTrackedIds = gson.fromJson(configJson, listType);
 				for (CombatAchievement achievement : allAchievements)
 				{
 					if (configTrackedIds.contains(achievement.getId()))
