@@ -100,33 +100,15 @@ public class CombatAchievementsPlugin extends Plugin
 		chatMessageUtil = new ChatMessageUtil(chatMessageManager, client);
 		panel = new CombatAchievementsPanel(this);
 
-		BufferedImage icon = null;
-		try
-		{
-			icon = ImageUtil.loadImageResource(CombatAchievementsPlugin.class, "combat_achievements_icon.png");
-		}
-		catch (Exception e)
-		{
-			log.warn("Could not load icon, using text button instead", e);
-		}
+		BufferedImage icon = ImageUtil.loadImageResource(CombatAchievementsPlugin.class, "combat_achievements_icon.png");
 
-		if (icon != null)
-		{
-			navigationButton = NavigationButton.builder()
-				.tooltip("Combat Achievements Tracker")
-				.icon(icon)
-				.priority(6)
-				.panel(panel)
-				.build();
-		}
-		else
-		{
-			navigationButton = NavigationButton.builder()
-				.tooltip("Combat Achievements Tracker")
-				.priority(6)
-				.panel(panel)
-				.build();
-		}
+		navigationButton = NavigationButton.builder()
+			.tooltip("Combat Achievements Tracker")
+			.icon(icon)
+			.priority(6)
+			.panel(panel)
+			.build();
+
 		clientToolbar.addNavigation(navigationButton);
 	}
 
