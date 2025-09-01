@@ -24,7 +24,9 @@
  */
 package com.catracker.ui.components;
 
+import com.catracker.CombatAchievementsPlugin;
 import com.catracker.ui.util.IconLoader;
+import java.awt.image.BufferedImage;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import javax.swing.*;
@@ -34,6 +36,7 @@ import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
+import net.runelite.client.util.ImageUtil;
 
 /**
  * Panel containing tier toggles and filter dropdowns
@@ -46,20 +49,37 @@ public class FilterPanel extends JPanel
 	private boolean sortAscending = true;
 
 	private final JPanel filtersSection = new JPanel();
-	private final JButton filtersToggleButton = new JButton("Filters v");
+	private final JButton filtersToggleButton = new JButton("Filters");
 	private final JPanel filtersPanel = new JPanel();
 	private final JPanel tiersSection = new JPanel();
-	private final JButton tiersToggleButton = new JButton("Tiers v");
+	private final JButton tiersToggleButton = new JButton("Tiers");
 	private final JPanel tiersPanel = new JPanel();
 
 	private final JComboBox<String> tierFilter = new JComboBox<>();
 	private final JComboBox<String> statusFilter = new JComboBox<>();
 	private final JComboBox<String> typeFilter = new JComboBox<>();
 	private final JComboBox<String> sortFilter = new JComboBox<>();
-	private final JButton sortDirectionButton = new JButton("^/v");
+	private final JButton sortDirectionButton = new JButton();
 
 	private final Map<String, Boolean> selectedTiers = new HashMap<>();
 	private Consumer<Void> refreshCallback;
+
+	private static final ImageIcon DOWN_ARROW;
+	private static final ImageIcon UP_ARROW;
+	private static final ImageIcon SORT_UP_ICON;
+	private static final ImageIcon SORT_DOWN_ICON;
+
+	static
+	{
+		BufferedImage rightArrow = ImageUtil.loadImageResource(CombatAchievementsPlugin.class, "arrow_right.png");
+		DOWN_ARROW = new ImageIcon(ImageUtil.rotateImage(rightArrow, Math.PI / 2));
+		UP_ARROW = new ImageIcon(ImageUtil.rotateImage(rightArrow, -Math.PI / 2));
+		BufferedImage sortUpImg = ImageUtil.loadImageResource(CombatAchievementsPlugin.class, "sort_up.png");
+		BufferedImage sortDownImg = ImageUtil.loadImageResource(CombatAchievementsPlugin.class, "sort_down.png");
+
+		SORT_UP_ICON = new ImageIcon(ImageUtil.resizeImage(sortUpImg, 16, 16));
+		SORT_DOWN_ICON = new ImageIcon(ImageUtil.resizeImage(sortDownImg, 16, 16));
+	}
 
 	public FilterPanel()
 	{
@@ -121,12 +141,11 @@ public class FilterPanel extends JPanel
 		sortFilter.addItem("Name");
 		sortFilter.addItem("Completion");
 
-		sortDirectionButton.setFont(FontManager.getRunescapeSmallFont());
 		sortDirectionButton.setPreferredSize(new Dimension(25, 20));
 		sortDirectionButton.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		sortDirectionButton.setForeground(Color.WHITE);
 		sortDirectionButton.setBorder(new LineBorder(ColorScheme.MEDIUM_GRAY_COLOR, 1));
 		sortDirectionButton.setFocusPainted(false);
+		sortDirectionButton.setIcon(SORT_UP_ICON);
 	}
 
 	private void setupTiersSection()
@@ -135,13 +154,34 @@ public class FilterPanel extends JPanel
 		tiersSection.setBorder(new EmptyBorder(0, 10, 5, 10));
 		tiersSection.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-		tiersToggleButton.setFont(FontManager.getRunescapeSmallFont());
-		tiersToggleButton.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		tiersToggleButton.setForeground(Color.WHITE);
-		tiersToggleButton.setBorder(new EmptyBorder(6, 8, 6, 8));
-		tiersToggleButton.setFocusPainted(false);
-		tiersToggleButton.setHorizontalAlignment(SwingConstants.LEFT);
-		tiersToggleButton.setText("Tiers                                                      v");
+		// Create custom toggle button panel
+		JPanel tiersTogglePanel = new JPanel(new BorderLayout());
+		tiersTogglePanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		tiersTogglePanel.setBorder(new LineBorder(ColorScheme.MEDIUM_GRAY_COLOR, 1));
+		tiersTogglePanel.setPreferredSize(new Dimension(0, 30));
+
+		JLabel tiersLabel = new JLabel("Tiers");
+		tiersLabel.setFont(FontManager.getRunescapeSmallFont());
+		tiersLabel.setForeground(Color.WHITE);
+		tiersLabel.setBorder(new EmptyBorder(6, 8, 6, 8));
+
+		JLabel tiersArrowLabel = new JLabel();
+		tiersArrowLabel.setBorder(new EmptyBorder(6, 8, 6, 8));
+		updateTiersArrow(tiersArrowLabel);
+
+		tiersTogglePanel.add(tiersLabel, BorderLayout.WEST);
+		tiersTogglePanel.add(tiersArrowLabel, BorderLayout.EAST);
+
+		// Make the whole panel clickable
+		tiersTogglePanel.addMouseListener(new java.awt.event.MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(java.awt.event.MouseEvent e)
+			{
+				toggleTiers();
+				updateTiersArrow(tiersArrowLabel);
+			}
+		});
 
 		tiersPanel.setLayout(new GridLayout(2, 3, 5, 5));
 		tiersPanel.setBorder(new EmptyBorder(8, 0, 0, 0));
@@ -155,8 +195,33 @@ public class FilterPanel extends JPanel
 			tiersPanel.add(tierButton);
 		}
 
-		tiersSection.add(tiersToggleButton, BorderLayout.NORTH);
+		tiersSection.add(tiersTogglePanel, BorderLayout.NORTH);
 		tiersSection.add(tiersPanel, BorderLayout.CENTER);
+	}
+
+	private void updateTiersArrow(JLabel arrowLabel)
+	{
+		arrowLabel.setIcon(tiersExpanded ? UP_ARROW : DOWN_ARROW);
+	}
+
+	private void updateTiersToggleButton()
+	{
+		if (tiersExpanded)
+		{
+			tiersToggleButton.setText("Tiers");
+			tiersToggleButton.setIcon(UP_ARROW);
+			tiersToggleButton.setHorizontalTextPosition(SwingConstants.LEFT);
+			tiersToggleButton.setHorizontalAlignment(SwingConstants.LEFT);
+			tiersToggleButton.setIconTextGap(100);
+		}
+		else
+		{
+			tiersToggleButton.setText("Tiers");
+			tiersToggleButton.setIcon(DOWN_ARROW);
+			tiersToggleButton.setHorizontalTextPosition(SwingConstants.LEFT);
+			tiersToggleButton.setHorizontalAlignment(SwingConstants.LEFT);
+			tiersToggleButton.setIconTextGap(100);
+		}
 	}
 
 	private JToggleButton createTierButton(String tier)
@@ -233,13 +298,34 @@ public class FilterPanel extends JPanel
 		filtersSection.setBorder(new EmptyBorder(0, 10, 5, 10));
 		filtersSection.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-		filtersToggleButton.setFont(FontManager.getRunescapeSmallFont());
-		filtersToggleButton.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		filtersToggleButton.setForeground(Color.WHITE);
-		filtersToggleButton.setBorder(new EmptyBorder(6, 8, 6, 8));
-		filtersToggleButton.setFocusPainted(false);
-		filtersToggleButton.setHorizontalAlignment(SwingConstants.LEFT);
-		filtersToggleButton.setText("Filters                                                    v");
+		// Create custom toggle button panel
+		JPanel filtersTogglePanel = new JPanel(new BorderLayout());
+		filtersTogglePanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		filtersTogglePanel.setBorder(new LineBorder(ColorScheme.MEDIUM_GRAY_COLOR, 1));
+		filtersTogglePanel.setPreferredSize(new Dimension(0, 30));
+
+		JLabel filtersLabel = new JLabel("Filters");
+		filtersLabel.setFont(FontManager.getRunescapeSmallFont());
+		filtersLabel.setForeground(Color.WHITE);
+		filtersLabel.setBorder(new EmptyBorder(6, 8, 6, 8));
+
+		JLabel filtersArrowLabel = new JLabel();
+		filtersArrowLabel.setBorder(new EmptyBorder(6, 8, 6, 8));
+		updateFiltersArrow(filtersArrowLabel);
+
+		filtersTogglePanel.add(filtersLabel, BorderLayout.WEST);
+		filtersTogglePanel.add(filtersArrowLabel, BorderLayout.EAST);
+
+		// Make the whole panel clickable
+		filtersTogglePanel.addMouseListener(new java.awt.event.MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(java.awt.event.MouseEvent e)
+			{
+				toggleFilters();
+				updateFiltersArrow(filtersArrowLabel);
+			}
+		});
 
 		filtersPanel.setLayout(new GridBagLayout());
 		filtersPanel.setBorder(new EmptyBorder(8, 0, 0, 0));
@@ -264,8 +350,33 @@ public class FilterPanel extends JPanel
 		gbc.gridy = 3;
 		filtersPanel.add(createSortRow(), gbc);
 
-		filtersSection.add(filtersToggleButton, BorderLayout.NORTH);
+		filtersSection.add(filtersTogglePanel, BorderLayout.NORTH);
 		filtersSection.add(filtersPanel, BorderLayout.CENTER);
+	}
+
+	private void updateFiltersArrow(JLabel arrowLabel)
+	{
+		arrowLabel.setIcon(filtersExpanded ? UP_ARROW : DOWN_ARROW);
+	}
+
+	private void updateFiltersToggleButton()
+	{
+		if (filtersExpanded)
+		{
+			filtersToggleButton.setText("Filters");
+			filtersToggleButton.setIcon(UP_ARROW);
+			filtersToggleButton.setHorizontalTextPosition(SwingConstants.LEFT);
+			filtersToggleButton.setHorizontalAlignment(SwingConstants.LEFT);
+			filtersToggleButton.setIconTextGap(100);
+		}
+		else
+		{
+			filtersToggleButton.setText("Filters");
+			filtersToggleButton.setIcon(DOWN_ARROW);
+			filtersToggleButton.setHorizontalTextPosition(SwingConstants.LEFT);
+			filtersToggleButton.setHorizontalAlignment(SwingConstants.LEFT);
+			filtersToggleButton.setIconTextGap(100);
+		}
 	}
 
 	private JPanel createFilterRow(String labelText, JComboBox<String> comboBox)
@@ -327,9 +438,6 @@ public class FilterPanel extends JPanel
 	{
 		tiersExpanded = !tiersExpanded;
 		tiersPanel.setVisible(tiersExpanded);
-		tiersToggleButton.setText(tiersExpanded ?
-			"Tiers                                                      ^" :
-			"Tiers                                                      v");
 		revalidate();
 		repaint();
 	}
@@ -338,9 +446,6 @@ public class FilterPanel extends JPanel
 	{
 		filtersExpanded = !filtersExpanded;
 		filtersPanel.setVisible(filtersExpanded);
-		filtersToggleButton.setText(filtersExpanded ?
-			"Filters                                                    ^" :
-			"Filters                                                    v");
 		revalidate();
 		repaint();
 	}
@@ -348,7 +453,7 @@ public class FilterPanel extends JPanel
 	private void toggleSortDirection()
 	{
 		sortAscending = !sortAscending;
-		sortDirectionButton.setText(sortAscending ? "^/v" : "v/^");
+		sortDirectionButton.setIcon(sortAscending ? SORT_UP_ICON : SORT_DOWN_ICON);
 		triggerRefresh();
 	}
 
