@@ -44,21 +44,12 @@ public class IconLoader
 	 */
 	public static ImageIcon loadIcon(String iconName, int width, int height)
 	{
-		try
-		{
-			// Use the plugin's main class for resource loading to ensure correct classpath
-			BufferedImage originalIcon = ImageUtil.loadImageResource(
-				com.catracker.CombatAchievementsPlugin.class,
-				iconName
-			);
-			BufferedImage resizedIcon = ImageUtil.resizeImage(originalIcon, width, height);
-			return new ImageIcon(resizedIcon);
-		}
-		catch (Exception e)
-		{
-			log.warn("Could not load icon '{}': {}", iconName, e.getMessage());
-			return null;
-		}
+		BufferedImage originalIcon = ImageUtil.loadImageResource(
+			com.catracker.CombatAchievementsPlugin.class,
+			iconName
+		);
+		BufferedImage resizedIcon = ImageUtil.resizeImage(originalIcon, width, height);
+		return new ImageIcon(resizedIcon);
 	}
 
 	/**
@@ -93,5 +84,29 @@ public class IconLoader
 	public static ImageIcon loadTrackRemoveIcon()
 	{
 		return loadIcon("track_remove.png", 12, 12);
+	}
+
+	/**
+	 * Load arrow right icon (rotated for up/down arrows)
+	 */
+	public static ImageIcon loadArrowRight()
+	{
+		return loadIcon("arrow_right.png", 16, 16);
+	}
+
+	/**
+	 * Load sort up icon (24x24)
+	 */
+	public static ImageIcon loadSortUpIcon()
+	{
+		return loadIcon("sort_up.png", 16, 16);
+	}
+
+	/**
+	 * Load sort down icon (24x24)
+	 */
+	public static ImageIcon loadSortDownIcon()
+	{
+		return loadIcon("sort_down.png", 16, 16);
 	}
 }

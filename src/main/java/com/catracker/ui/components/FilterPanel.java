@@ -71,14 +71,13 @@ public class FilterPanel extends JPanel
 
 	static
 	{
-		BufferedImage rightArrow = ImageUtil.loadImageResource(CombatAchievementsPlugin.class, "arrow_right.png");
-		DOWN_ARROW = new ImageIcon(ImageUtil.rotateImage(rightArrow, Math.PI / 2));
-		UP_ARROW = new ImageIcon(ImageUtil.rotateImage(rightArrow, -Math.PI / 2));
-		BufferedImage sortUpImg = ImageUtil.loadImageResource(CombatAchievementsPlugin.class, "sort_up.png");
-		BufferedImage sortDownImg = ImageUtil.loadImageResource(CombatAchievementsPlugin.class, "sort_down.png");
+		ImageIcon rightArrow = IconLoader.loadArrowRight();
+		BufferedImage rightArrowImg = (BufferedImage) rightArrow.getImage();
+		DOWN_ARROW = new ImageIcon(ImageUtil.rotateImage(rightArrowImg, Math.PI / 2));
+		UP_ARROW = new ImageIcon(ImageUtil.rotateImage(rightArrowImg, -Math.PI / 2));
 
-		SORT_UP_ICON = new ImageIcon(ImageUtil.resizeImage(sortUpImg, 16, 16));
-		SORT_DOWN_ICON = new ImageIcon(ImageUtil.resizeImage(sortDownImg, 16, 16));
+		SORT_UP_ICON = IconLoader.loadSortUpIcon();
+		SORT_DOWN_ICON = IconLoader.loadSortDownIcon();
 	}
 
 	public FilterPanel()
