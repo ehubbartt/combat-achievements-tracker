@@ -300,7 +300,7 @@ public class CombatAchievementsPanel extends PluginPanel
 
 	public void updateAchievements(List<CombatAchievement> newAchievements)
 	{
-		log.info("updateAchievements called with {} achievements", newAchievements.size());
+		log.debug("updateAchievements called with {} achievements", newAchievements.size());
 		SwingUtilities.invokeLater(() ->
 		{
 			allAchievements.clear();
@@ -308,7 +308,6 @@ public class CombatAchievementsPanel extends PluginPanel
 			achievementPanels.clear();
 			loadTrackedAchievements();
 			refreshContent();
-			log.info("refreshContent completed");
 		});
 	}
 
@@ -615,12 +614,11 @@ public class CombatAchievementsPanel extends PluginPanel
 	{
 		try
 		{
-			log.info("saveTrackedAchievements called - current tracked list size: {}", trackedAchievements.size());
+			log.debug("saveTrackedAchievements called - current tracked list size: {}", trackedAchievements.size());
 			List<Integer> trackedIds = trackedAchievements.stream()
 				.map(CombatAchievement::getId)
 				.collect(Collectors.toList());
 			String trackedJson = gson.toJson(trackedIds);
-			log.info("JSON to save: '{}'", trackedJson);
 			try
 			{
 				if (plugin.getConfigManager().getRSProfileKey() != null)
@@ -631,7 +629,6 @@ public class CombatAchievementsPanel extends PluginPanel
 						trackedJson
 					);
 				}
-				log.info("Saved {} tracked achievements to config", trackedIds.size());
 			}
 			catch (Exception e)
 			{
@@ -689,36 +686,19 @@ public class CombatAchievementsPanel extends PluginPanel
 		}
 	}
 
-	public void clearAllTracked()
-	{
-		log.info("Manually clearing all tracked achievements. Current size: {}", trackedAchievements.size());
-		for (CombatAchievement achievement : new ArrayList<>(trackedAchievements))
-		{
-			achievement.setTracked(false);
-		}
-		clearAllConfigData();
-		trackedAchievements.clear();
-		updateStats();
-		refreshContent();
-		log.info("All tracked achievements cleared");
-	}
-
 	public void onAchievementCompleted(String message)
 	{
-		log.info("Achievement completed notification: {}", message);
+		log.debug("Achievement completed notification: {}", message);
 		refreshContent();
 	}
 
 	public void addToTracked(CombatAchievement achievement)
 	{
-		log.info("addToTracked called for: {} (ID: {})", achievement.getName(), achievement.getId());
+		log.debug("addToTracked called for: {} (ID: {})", achievement.getName(), achievement.getId());
 		if (!trackedAchievements.contains(achievement))
 		{
 			trackedAchievements.add(achievement);
 			achievement.setTracked(true);
-			log.info("Added achievement to tracked: {} (ID: {}). New size: {}",
-				achievement.getName(), achievement.getId(), trackedAchievements.size());
-
 			CombatAchievementPanel panel = achievementPanels.get(achievement.getId());
 			if (panel != null)
 			{
@@ -732,13 +712,10 @@ public class CombatAchievementsPanel extends PluginPanel
 
 	public void removeFromTracked(CombatAchievement achievement)
 	{
-		log.info("removeFromTracked called for: {} (ID: {})", achievement.getName(), achievement.getId());
+		log.debug("removeFromTracked called for: {} (ID: {})", achievement.getName(), achievement.getId());
 		if (trackedAchievements.remove(achievement))
 		{
 			achievement.setTracked(false);
-			log.info("Removed achievement from tracked: {} (ID: {}). New size: {}",
-				achievement.getName(), achievement.getId(), trackedAchievements.size());
-
 			CombatAchievementPanel panel = achievementPanels.get(achievement.getId());
 			if (panel != null)
 			{

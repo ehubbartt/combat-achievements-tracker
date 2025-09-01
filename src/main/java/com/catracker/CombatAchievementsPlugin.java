@@ -94,12 +94,11 @@ public class CombatAchievementsPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
-		log.info("Combat Achievements Tracker starting up...");
+		log.debug("Combat Achievements Tracker starting up...");
 
 		dataLoader = new CombatAchievementsDataLoader(client, clientThread);
 		chatMessageUtil = new ChatMessageUtil(chatMessageManager, client);
 		panel = new CombatAchievementsPanel(this);
-		log.info("Panel created successfully");
 
 		BufferedImage icon = null;
 		try
@@ -129,29 +128,6 @@ public class CombatAchievementsPlugin extends Plugin
 				.build();
 		}
 		clientToolbar.addNavigation(navigationButton);
-		log.info("Combat Achievements Tracker started successfully!");
-	}
-
-	@Override
-	protected void shutDown() throws Exception
-	{
-		log.info("Combat Achievements Tracker stopping...");
-
-		if (panel != null)
-		{
-			try
-			{
-				log.info("Saved tracked achievements before shutdown");
-				Thread.sleep(100);
-			}
-			catch (Exception e)
-			{
-				log.error("Failed to save tracked achievements during shutdown", e);
-			}
-		}
-
-		clientToolbar.removeNavigation(navigationButton);
-		log.info("Combat Achievements Tracker stopped!");
 	}
 
 	@Subscribe
@@ -162,7 +138,6 @@ public class CombatAchievementsPlugin extends Plugin
 		if (gameStateChanged.getGameState() == GameState.LOGGED_IN)
 		{
 			dataLoader.requestDataLoad();
-			log.info("Game logged in - will load Combat Achievements on next game tick");
 		}
 	}
 
@@ -195,7 +170,7 @@ public class CombatAchievementsPlugin extends Plugin
 
 	private void handleCombatAchievementCompletion(String message)
 	{
-		log.info("Combat achievement completed: {}", message);
+		log.debug("Combat achievement completed: {}", message);
 
 		SwingUtilities.invokeLater(() ->
 		{
@@ -229,7 +204,7 @@ public class CombatAchievementsPlugin extends Plugin
 		if (client != null && client.getGameState() == GameState.LOGGED_IN)
 		{
 			dataLoader.requestManualRefresh();
-			log.info("Manual refresh requested - will load on next game tick");
+			log.debug("Manual refresh requested - will load on next game tick");
 		}
 		else
 		{

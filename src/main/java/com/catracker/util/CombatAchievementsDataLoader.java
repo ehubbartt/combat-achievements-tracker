@@ -85,7 +85,6 @@ public class CombatAchievementsDataLoader
 		{
 			needsDataLoad = false;
 			dataLoadRequested = true;
-			log.info("Loading Combat Achievements on game tick...");
 			loadCombatAchievementsFromClient(panel);
 		}
 	}
@@ -102,7 +101,7 @@ public class CombatAchievementsDataLoader
 		{
 			try
 			{
-				log.info("Loading Combat Achievements from client data...");
+				log.debug("Loading Combat Achievements from client data...");
 				List<CombatAchievement> achievements = new ArrayList<>();
 
 				for (Map.Entry<Integer, String> tierEntry : TIER_MAP.entrySet())
