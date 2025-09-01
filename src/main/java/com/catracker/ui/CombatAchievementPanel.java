@@ -30,13 +30,13 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
+import net.runelite.client.util.LinkBrowser;
 import net.runelite.client.util.SwingUtil;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.net.URI;
 
 @Slf4j
 public class CombatAchievementPanel extends JPanel
@@ -261,7 +261,7 @@ public class CombatAchievementPanel extends JPanel
 	{
 		try
 		{
-			Desktop.getDesktop().browse(new URI(achievement.getWikiUrl()));
+			LinkBrowser.browse(achievement.getWikiUrl());
 		}
 		catch (Exception ex)
 		{
