@@ -101,6 +101,7 @@ public class CombatAchievementsDataLoader
 		{
 			try
 			{
+				TierUtil.initializeTierThresholds(client);
 				log.debug("Loading Combat Achievements from client data...");
 				List<CombatAchievement> achievements = new ArrayList<>();
 

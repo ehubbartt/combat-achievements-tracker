@@ -63,8 +63,8 @@ public class ChatMessageUtil
 			.mapToInt(CombatAchievement::getPoints)
 			.sum();
 
-		int pointGoal = getPointsFromGoal(tierGoal, totalCompletedPoints);
-		String actualTierName = getActualTierName(tierGoal, totalCompletedPoints);
+		int pointGoal = TierUtil.getPointsFromGoal(tierGoal, totalCompletedPoints);
+		String actualTierName = TierUtil.getActualTierName(tierGoal, totalCompletedPoints);
 
 		ChatMessageBuilder message = new ChatMessageBuilder()
 			.append(Color.CYAN, "[Combat Achievements] ");
@@ -98,85 +98,5 @@ public class ChatMessageUtil
 			.type(ChatMessageType.CONSOLE)
 			.runeLiteFormattedMessage(message)
 			.build());
-	}
-
-	private int getPointsFromGoal(CombatAchievementsConfig.TierGoal tierGoal, int completedPoints)
-	{
-		if (tierGoal.toString().equalsIgnoreCase("AUTO"))
-		{
-			if (completedPoints < 38)
-			{
-				return 38;
-			}
-			else if (completedPoints < 148)
-			{
-				return 148;
-			}
-			else if (completedPoints < 394)
-			{
-				return 394;
-			}
-			else if (completedPoints < 1026)
-			{
-				return 1026;
-			}
-			else if (completedPoints < 1841)
-			{
-				return 1841;
-			}
-			else
-			{
-				return 2525;
-			}
-		}
-
-		switch (tierGoal)
-		{
-			case TIER_EASY:
-				return 38;
-			case TIER_MEDIUM:
-				return 148;
-			case TIER_HARD:
-				return 394;
-			case TIER_ELITE:
-				return 1026;
-			case TIER_MASTER:
-				return 1841;
-			default:
-				return 2525;
-		}
-	}
-
-	private String getActualTierName(CombatAchievementsConfig.TierGoal tierGoal, int completedPoints)
-	{
-		if (tierGoal.toString().equalsIgnoreCase("AUTO"))
-		{
-			if (completedPoints < 38)
-			{
-				return "Easy";
-			}
-			else if (completedPoints < 148)
-			{
-				return "Medium";
-			}
-			else if (completedPoints < 394)
-			{
-				return "Hard";
-			}
-			else if (completedPoints < 1026)
-			{
-				return "Elite";
-			}
-			else if (completedPoints < 1841)
-			{
-				return "Master";
-			}
-			else
-			{
-				return "Grandmaster";
-			}
-		}
-
-		return tierGoal.toString().replace("TIER_", "");
 	}
 }

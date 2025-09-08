@@ -28,6 +28,7 @@ import com.catracker.CombatAchievementsPlugin;
 import com.catracker.config.CombatAchievementsConfig;
 import com.catracker.model.BossStats;
 import com.catracker.model.CombatAchievement;
+import com.catracker.util.TierUtil;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 
@@ -151,8 +152,8 @@ public class StatsPanel extends JPanel
 			.sum();
 
 		CombatAchievementsConfig.TierGoal tierGoal = plugin.getTierGoal();
-		int pointGoal = getPointsFromGoal(tierGoal, totalCompletedPoints);
-		String actualTierName = getActualTierName(tierGoal, totalCompletedPoints);
+		int pointGoal = TierUtil.getPointsFromGoal(tierGoal, totalCompletedPoints);
+		String actualTierName = TierUtil.getActualTierName(tierGoal, totalCompletedPoints);
 
 		totalPointsLabel.setText("Total: " + completedPoints + "/" + totalPoints + " pts" +
 			" (" + visibleAchievements.size() + " " + viewContext + ")");
@@ -204,8 +205,8 @@ public class StatsPanel extends JPanel
 			.sum();
 
 		CombatAchievementsConfig.TierGoal tierGoal = plugin.getTierGoal();
-		int pointGoal = getPointsFromGoal(tierGoal, totalCompletedPoints);
-		String actualTierName = getActualTierName(tierGoal, totalCompletedPoints);
+		int pointGoal = TierUtil.getPointsFromGoal(tierGoal, totalCompletedPoints);
+		String actualTierName = TierUtil.getActualTierName(tierGoal, totalCompletedPoints);
 
 		if (totalCompletedPoints >= pointGoal)
 		{
@@ -216,85 +217,5 @@ public class StatsPanel extends JPanel
 			int remainingPoints = pointGoal - totalCompletedPoints;
 			goalLabel.setText("Goal: " + remainingPoints + " pts to " + actualTierName);
 		}
-	}
-
-	public int getPointsFromGoal(CombatAchievementsConfig.TierGoal tierGoal, int completedPoints)
-	{
-		if (tierGoal.toString().equalsIgnoreCase("AUTO"))
-		{
-			if (completedPoints < 38)
-			{
-				return 38;
-			}
-			else if (completedPoints < 148)
-			{
-				return 148;
-			}
-			else if (completedPoints < 394)
-			{
-				return 394;
-			}
-			else if (completedPoints < 1026)
-			{
-				return 1026;
-			}
-			else if (completedPoints < 1841)
-			{
-				return 1841;
-			}
-			else
-			{
-				return 2525;
-			}
-		}
-
-		switch (tierGoal)
-		{
-			case TIER_EASY:
-				return 38;
-			case TIER_MEDIUM:
-				return 148;
-			case TIER_HARD:
-				return 394;
-			case TIER_ELITE:
-				return 1026;
-			case TIER_MASTER:
-				return 1841;
-			default:
-				return 2525;
-		}
-	}
-
-	private String getActualTierName(CombatAchievementsConfig.TierGoal tierGoal, int completedPoints)
-	{
-		if (tierGoal.toString().equalsIgnoreCase("AUTO"))
-		{
-			if (completedPoints < 38)
-			{
-				return "Easy";
-			}
-			else if (completedPoints < 148)
-			{
-				return "Medium";
-			}
-			else if (completedPoints < 394)
-			{
-				return "Hard";
-			}
-			else if (completedPoints < 1026)
-			{
-				return "Elite";
-			}
-			else if (completedPoints < 1841)
-			{
-				return "Master";
-			}
-			else
-			{
-				return "Grandmaster";
-			}
-		}
-
-		return tierGoal.toString();
 	}
 }
