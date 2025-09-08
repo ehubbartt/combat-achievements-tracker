@@ -84,7 +84,7 @@ public class CombatAchievementPanel extends JPanel
 
 		nameLabel.setFont(FontManager.getRunescapeSmallFont());
 		nameLabel.setForeground(getNameColor());
-		nameLabel.setText("<html>" + achievement.getName() + "</html>");
+		nameLabel.setText(achievement.getName());
 
 		setupTierIcon();
 
@@ -127,7 +127,7 @@ public class CombatAchievementPanel extends JPanel
 
 		descriptionLabel.setFont(FontManager.getRunescapeSmallFont());
 		descriptionLabel.setForeground(Color.LIGHT_GRAY);
-		descriptionLabel.setText("<html>" + achievement.getDescription() + "</html>");
+		descriptionLabel.setText(achievement.getDescription());
 		descriptionLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		centerPanel.add(descriptionLabel);
 
@@ -234,7 +234,6 @@ public class CombatAchievementPanel extends JPanel
 		});
 	}
 
-	@SuppressWarnings("checkstyle:LeftCurly")
 	private void showContextMenu(MouseEvent e)
 	{
 		JPopupMenu popup = new JPopupMenu();
@@ -372,12 +371,11 @@ public class CombatAchievementPanel extends JPanel
 		return tooltip.toString();
 	}
 
-	@SuppressWarnings("checkstyle:LeftCurly")
 	public void refresh()
 	{
 		SwingUtilities.invokeLater(() ->
 		{
-			nameLabel.setText("<html>" + achievement.getName() + "</html>");
+			nameLabel.setText(achievement.getName());
 			nameLabel.setForeground(getNameColor());
 
 			setupTierIcon();
