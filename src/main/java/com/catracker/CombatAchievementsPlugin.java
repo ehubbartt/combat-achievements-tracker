@@ -24,6 +24,7 @@
  */
 package com.catracker;
 
+import com.google.gson.Gson;
 import com.google.inject.Provides;
 import javax.inject.Inject;
 import javax.swing.SwingUtilities;
@@ -73,6 +74,10 @@ public class CombatAchievementsPlugin extends Plugin
 	@Getter
 	@Inject
 	private ConfigManager configManager;
+
+	@Getter
+	@Inject
+	private Gson gson;
 
 	@Inject
 	private ClientToolbar clientToolbar;
