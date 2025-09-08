@@ -90,6 +90,7 @@ public class CombatAchievementsPlugin extends Plugin
 	private ChatMessageUtil chatMessageUtil;
 
 	private NavigationButton navigationButton;
+	private boolean hasLoadedThisSession = false;
 
 	@Override
 	protected void startUp() throws Exception
@@ -119,14 +120,21 @@ public class CombatAchievementsPlugin extends Plugin
 		clientToolbar.removeNavigation(navigationButton);
 	}
 
+
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged gameStateChanged)
 	{
 		log.debug("Game state changed: {}", gameStateChanged.getGameState());
 
-		if (gameStateChanged.getGameState() == GameState.LOGGED_IN)
+		if (gameStateChanged.getGameState() == GameState.LOGGED_IN && !hasLoadedThisSession)
 		{
 			dataLoader.requestDataLoad();
+			hasLoadedThisSession = true;
+		}
+		else if (gameStateChanged.getGameState() == GameState.LOGIN_SCREEN ||
+			gameStateChanged.getGameState() == GameState.CONNECTION_LOST)
+		{
+			hasLoadedThisSession = false;
 		}
 	}
 
