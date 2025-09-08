@@ -112,6 +112,13 @@ public class CombatAchievementsPlugin extends Plugin
 		clientToolbar.addNavigation(navigationButton);
 	}
 
+	@Override
+	protected void shutDown() throws Exception
+	{
+		super.shutDown();
+		clientToolbar.removeNavigation(navigationButton);
+	}
+
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged gameStateChanged)
 	{
