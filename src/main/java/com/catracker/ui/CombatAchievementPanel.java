@@ -332,7 +332,7 @@ public class CombatAchievementPanel extends JPanel
 	private String createTooltip()
 	{
 		StringBuilder tooltip = new StringBuilder();
-		tooltip.append("<html>");
+		tooltip.append("<html><div style='width: 300px;'>");
 		tooltip.append("<b>").append(achievement.getName()).append("</b><br>");
 		tooltip.append(achievement.getDescription()).append("<br><br>");
 		tooltip.append("Tier: ").append(achievement.getTier()).append("<br>");
