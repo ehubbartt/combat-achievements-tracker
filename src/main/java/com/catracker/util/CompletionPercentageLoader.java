@@ -87,7 +87,7 @@ public class CompletionPercentageLoader
 			if (!response.isSuccessful())
 			{
 				String unsuccessful = "Wiki request unsuccessful with status " + response.code();
-				if (response.body() != null)
+				if (response.body() == null)
 				{
 					unsuccessful += " and body \n" + response.body().string();
 				}
