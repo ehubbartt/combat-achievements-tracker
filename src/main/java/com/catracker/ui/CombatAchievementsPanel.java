@@ -60,7 +60,6 @@ public class CombatAchievementsPanel extends PluginPanel
 	private ViewMode currentViewMode = ViewMode.ALL_TASKS;
 	private String selectedBoss = null;
 
-	// UI Components
 	@Getter
 	private final IconTextField searchBar;
 	private final JPanel headerPanel = new JPanel(new BorderLayout());
@@ -74,12 +73,10 @@ public class CombatAchievementsPanel extends PluginPanel
 	private final JButton backButton = new JButton("<");
 	private final JLabel bossTitle = new JLabel();
 
-	// Component panels
 	private final StatsPanel statsPanel;
 	private final FilterPanel filterPanel;
 	private final BossGridPanel bossGridPanel;
 
-	// Data
 	private List<CombatAchievement> allAchievements = new ArrayList<>();
 	private List<CombatAchievement> trackedAchievements = new ArrayList<>();
 	private String currentSearchText = "";
@@ -97,7 +94,6 @@ public class CombatAchievementsPanel extends PluginPanel
 		super(false);
 		this.plugin = plugin;
 
-		// Initialize components
 		searchBar = new IconTextField();
 		statsPanel = new StatsPanel(plugin);
 		filterPanel = new FilterPanel();
@@ -117,7 +113,6 @@ public class CombatAchievementsPanel extends PluginPanel
 		setupSearchBar();
 		setupContentContainer();
 
-		// Set up component callbacks
 		filterPanel.setRefreshCallback((v) -> refreshContent());
 		bossGridPanel.setBossClickCallback(this::selectBoss);
 	}
@@ -306,7 +301,7 @@ public class CombatAchievementsPanel extends PluginPanel
 		});
 	}
 
-	private void refreshContent()
+	public void refreshContent()
 	{
 		refreshContent(true);
 	}
@@ -433,7 +428,6 @@ public class CombatAchievementsPanel extends PluginPanel
 			.filter(this::matchesFilters)
 			.collect(Collectors.toList());
 
-		// Apply sorting
 		String sortOption = filterPanel.getSelectedSortFilter();
 		if (sortOption != null)
 		{
@@ -479,6 +473,24 @@ public class CombatAchievementsPanel extends PluginPanel
 						filtered.sort((a, b) -> Boolean.compare(b.isCompleted(), a.isCompleted()));
 					}
 					break;
+				case "Completion %":
+					filtered.sort((a, b) ->
+					{
+						Double aComp = a.getCompletionPercentage();
+						Double bComp = b.getCompletionPercentage();
+						if (aComp == null && bComp == null) return 0;
+						if (aComp == null) return 1;
+						if (bComp == null) return -1;
+						if (filterPanel.isSortAscending())
+						{
+							return Double.compare(bComp, aComp);
+						}
+						else
+						{
+							return Double.compare(aComp, bComp);
+						}
+					});
+					break;
 				default:
 					filtered.sort((a, b) ->
 					{
@@ -492,7 +504,6 @@ public class CombatAchievementsPanel extends PluginPanel
 
 	private boolean matchesFilters(CombatAchievement achievement)
 	{
-		// Search filter
 		if (!currentSearchText.isEmpty() &&
 			!achievement.getName().toLowerCase().contains(currentSearchText) &&
 			!achievement.getDescription().toLowerCase().contains(currentSearchText))
@@ -500,20 +511,17 @@ public class CombatAchievementsPanel extends PluginPanel
 			return false;
 		}
 
-		// Tier dropdown filter
 		String selectedTier = filterPanel.getSelectedTierFilter();
 		if (!"All Tiers".equals(selectedTier) && !achievement.getTier().equals(selectedTier))
 		{
 			return false;
 		}
 
-		// Tier toggle filter
 		if (!filterPanel.getSelectedTiers().getOrDefault(achievement.getTier(), true))
 		{
 			return false;
 		}
 
-		// Status filter
 		String selectedStatus = filterPanel.getSelectedStatusFilter();
 		if ("Completed".equals(selectedStatus) && !achievement.isCompleted())
 		{
@@ -524,7 +532,6 @@ public class CombatAchievementsPanel extends PluginPanel
 			return false;
 		}
 
-		// Type filter
 		String selectedType = filterPanel.getSelectedTypeFilter();
 		if (!"All Types".equals(selectedType))
 		{
@@ -604,7 +611,6 @@ public class CombatAchievementsPanel extends PluginPanel
 		}
 	}
 
-	// Data persistence methods
 	public void saveTrackedAchievements()
 	{
 		try
@@ -735,11 +741,6 @@ public class CombatAchievementsPanel extends PluginPanel
 
 	private void loadSampleData()
 	{
-//		allAchievements.add(new CombatAchievement(1, "Just Getting Started", "General","test", "Kill any boss", "Easy", 1, false, false));
-//		allAchievements.add(new CombatAchievement(2, "Squashing Foot Soldiers","General", "test","Kill 5 goblins", "Easy", 1, false, false));
-//		allAchievements.add(new CombatAchievement(3, "Giant Mole Hunter","Giant Mole","test", "Kill the Giant Mole", "Medium", 2, false, false));
-//		allAchievements.add(new CombatAchievement(4, "Barrows Champion","Barrows","test", "Complete all Barrows brothers", "Hard", 4, false, false));
-//		allAchievements.add(new CombatAchievement(5, "Zuk Slayer","TzKal-Zuk","test", "Complete the Inferno", "Master", 6, false, false));
 	}
 
 	public void refreshCombatAchievements()

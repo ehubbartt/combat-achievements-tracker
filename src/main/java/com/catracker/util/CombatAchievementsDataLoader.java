@@ -1,3 +1,27 @@
+/*
+ * Copyright (c) 2025, Ethan Hubbartt <ehubbartt@gmail.com>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package com.catracker.util;
 
 import com.catracker.model.CombatAchievement;
@@ -17,7 +41,6 @@ import java.util.function.Consumer;
 @Slf4j
 public class CombatAchievementsDataLoader
 {
-
 	private final Client client;
 	private final ClientThread clientThread;
 
@@ -79,17 +102,17 @@ public class CombatAchievementsDataLoader
 		requestManualRefresh();
 	}
 
-	public void handleGameTick(CombatAchievementsPanel panel)
+	public void handleGameTick(CombatAchievementsPanel panel, CompletionPercentageLoader completionLoader)
 	{
 		if (needsDataLoad && !dataLoadRequested)
 		{
 			needsDataLoad = false;
 			dataLoadRequested = true;
-			loadCombatAchievementsFromClient(panel);
+			loadCombatAchievementsFromClient(panel, completionLoader);
 		}
 	}
 
-	private void loadCombatAchievementsFromClient(CombatAchievementsPanel panel)
+	private void loadCombatAchievementsFromClient(CombatAchievementsPanel panel, CompletionPercentageLoader completionLoader)
 	{
 		if (client == null || client.getGameState() != GameState.LOGGED_IN || client.getLocalPlayer() == null)
 		{
@@ -103,6 +126,7 @@ public class CombatAchievementsDataLoader
 			{
 				TierUtil.initializeTierThresholds(client);
 				log.debug("Loading Combat Achievements from client data...");
+
 				List<CombatAchievement> achievements = new ArrayList<>();
 
 				for (Map.Entry<Integer, String> tierEntry : TIER_MAP.entrySet())
@@ -118,6 +142,7 @@ public class CombatAchievementsDataLoader
 					}
 
 					int[] structIds = enumComp.getIntVals();
+					log.debug("Processing {} tasks for tier {}", structIds.length, tierName);
 
 					for (int structId : structIds)
 					{
@@ -157,22 +182,45 @@ public class CombatAchievementsDataLoader
 					}
 				}
 
-				final List<CombatAchievement> finalAchievements = achievements;
+				log.debug("Finished loading {} achievements on client thread", achievements.size());
 
-				SwingUtilities.invokeLater(() ->
-				{
-					if (panel != null)
+				completionLoader.loadCompletionPercentagesAsync()
+					.thenRun(() ->
 					{
-						panel.updateAchievements(finalAchievements);
-					}
+						completionLoader.hydrateAchievements(achievements);
 
-					// Call completion callback if set
-					if (onDataLoadComplete != null)
+						SwingUtilities.invokeLater(() ->
+						{
+							if (panel != null)
+							{
+								panel.updateAchievements(achievements);
+							}
+
+							if (onDataLoadComplete != null)
+							{
+								onDataLoadComplete.accept(achievements);
+								onDataLoadComplete = null;
+							}
+						});
+					})
+					.exceptionally(throwable ->
 					{
-						onDataLoadComplete.accept(finalAchievements);
-						onDataLoadComplete = null; // Clear callback after use
-					}
-				});
+						log.error("Completion percentage loading failed, updating panel without percentages", throwable);
+						SwingUtilities.invokeLater(() ->
+						{
+							if (panel != null)
+							{
+								panel.updateAchievements(achievements);
+							}
+
+							if (onDataLoadComplete != null)
+							{
+								onDataLoadComplete.accept(achievements);
+								onDataLoadComplete = null;
+							}
+						});
+						return null;
+					});
 
 				dataLoadRequested = false;
 			}
@@ -180,7 +228,7 @@ public class CombatAchievementsDataLoader
 			{
 				log.error("Failed to load Combat Achievements from client", e);
 				dataLoadRequested = false;
-				onDataLoadComplete = null; // Clear callback on error
+				onDataLoadComplete = null;
 			}
 		});
 	}

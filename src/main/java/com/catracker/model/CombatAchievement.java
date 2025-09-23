@@ -49,7 +49,7 @@ public class CombatAchievement
 	private String bossName;
 	private String type; // Kill Count, Perfection, Restriction, Mechanical, etc.
 	private int userDifficulty; // 1-5 user assigned difficulty
-	private Float completionPercentage; // Wiki completion percentage
+	private Double completionPercentage; // Wiki completion percentage
 	private String wikiUrl;
 
 	public CombatAchievement(int id, String name, String bossName, String type, String description, String tier, int points, boolean completed, boolean tracked)

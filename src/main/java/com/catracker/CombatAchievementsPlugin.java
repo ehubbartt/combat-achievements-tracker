@@ -33,6 +33,7 @@ import com.catracker.config.CombatAchievementsConfig;
 import com.catracker.ui.CombatAchievementsPanel;
 import com.catracker.util.CombatAchievementsDataLoader;
 import com.catracker.util.ChatMessageUtil;
+import com.catracker.util.CompletionPercentageLoader;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
@@ -50,6 +51,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
+import okhttp3.OkHttpClient;
 
 import java.awt.image.BufferedImage;
 
@@ -85,6 +87,9 @@ public class CombatAchievementsPlugin extends Plugin
 	@Inject
 	private ChatMessageManager chatMessageManager;
 
+	@Inject
+	private OkHttpClient okHttpClient;
+
 	@Getter
 	private CombatAchievementsPanel panel;
 
@@ -93,6 +98,8 @@ public class CombatAchievementsPlugin extends Plugin
 
 	@Getter
 	private ChatMessageUtil chatMessageUtil;
+
+	private CompletionPercentageLoader completionPercentageLoader;
 
 	private NavigationButton navigationButton;
 	private boolean hasLoadedThisSession = false;
@@ -104,6 +111,7 @@ public class CombatAchievementsPlugin extends Plugin
 
 		dataLoader = new CombatAchievementsDataLoader(client, clientThread);
 		chatMessageUtil = new ChatMessageUtil(chatMessageManager, client);
+		completionPercentageLoader = new CompletionPercentageLoader(okHttpClient);
 		panel = new CombatAchievementsPanel(this);
 
 		BufferedImage icon = ImageUtil.loadImageResource(CombatAchievementsPlugin.class, "combat_achievements_icon.png");
@@ -146,7 +154,7 @@ public class CombatAchievementsPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick gameTick)
 	{
-		dataLoader.handleGameTick(panel);
+		dataLoader.handleGameTick(panel, completionPercentageLoader);
 	}
 
 	public CombatAchievementsConfig.TierGoal getTierGoal()
@@ -180,7 +188,6 @@ public class CombatAchievementsPlugin extends Plugin
 			{
 				panel.onAchievementCompleted(message);
 
-				// Send progress chat message if enabled - wait for data refresh to complete
 				if (config.showGoalProgress())
 				{
 					dataLoader.requestManualRefresh(achievements ->
@@ -212,5 +219,10 @@ public class CombatAchievementsPlugin extends Plugin
 		{
 			log.warn("Cannot refresh - not logged in");
 		}
+	}
+
+	public CompletionPercentageLoader getCompletionPercentageLoader()
+	{
+		return completionPercentageLoader;
 	}
 }

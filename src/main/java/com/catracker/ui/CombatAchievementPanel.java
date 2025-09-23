@@ -44,7 +44,6 @@ public class CombatAchievementPanel extends JPanel
 	private final CombatAchievementsPlugin plugin;
 	private final CombatAchievement achievement;
 
-	// UI Components
 	private final JPanel container = new JPanel(new BorderLayout());
 	private final JPanel body = new JPanel(new BorderLayout());
 	private final JLabel nameLabel = new JLabel();
@@ -52,7 +51,6 @@ public class CombatAchievementPanel extends JPanel
 	private final JToggleButton trackButton = new JToggleButton();
 	private final JLabel tierIconLabel = new JLabel();
 
-	// Store references to all panels that need background color updates
 	private final JPanel topSection = new JPanel(new BorderLayout());
 	private final JPanel nameLabelPanel = new JPanel(new BorderLayout());
 	private final JPanel topRightPanel = new JPanel();
@@ -211,7 +209,6 @@ public class CombatAchievementPanel extends JPanel
 			}
 		});
 
-		// Right-click context menu
 		addMouseListener(new MouseAdapter()
 		{
 			@Override
@@ -238,7 +235,6 @@ public class CombatAchievementPanel extends JPanel
 	{
 		JPopupMenu popup = new JPopupMenu();
 
-		// Wiki link
 		JMenuItem wikiItem = new JMenuItem("Open Wiki");
 		wikiItem.addActionListener(event -> openWikiLink());
 		popup.add(wikiItem);
@@ -289,7 +285,6 @@ public class CombatAchievementPanel extends JPanel
 		}
 		else
 		{
-			// Fallback to text if icons can't be loaded
 			if (achievement.isTracked())
 			{
 				trackButton.setText("X");
@@ -353,8 +348,13 @@ public class CombatAchievementPanel extends JPanel
 
 		if (achievement.getCompletionPercentage() != null)
 		{
-			tooltip.append("Player Completion: ").append(String.format("%.1f%%", achievement.getCompletionPercentage())).append("<br>");
+			tooltip.append("Wiki Completion%: ").append(String.format("%.1f%%", achievement.getCompletionPercentage())).append("<br>");
 		}
+		else
+		{
+			tooltip.append("Wiki Completion%: Unknown<br>");
+		}
+
 		if (achievement.isCompleted())
 		{
 			tooltip.append("<br><font color='green'>Completed</font>");
