@@ -95,7 +95,7 @@ public class CompletionPercentageLoader
 				throw new Exception(unsuccessful);
 			}
 
-			if (response.body() != null)
+			if (response.body() == null)
 			{
 				log.error("Wiki response returned without body");
 				throw new Exception("Wiki response returned without body");
