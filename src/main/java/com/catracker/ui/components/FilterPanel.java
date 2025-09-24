@@ -24,7 +24,6 @@
  */
 package com.catracker.ui.components;
 
-import com.catracker.CombatAchievementsPlugin;
 import com.catracker.ui.util.IconLoader;
 import java.awt.image.BufferedImage;
 import net.runelite.client.ui.ColorScheme;
