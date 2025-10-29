@@ -59,19 +59,86 @@ public class StatsPanel extends JPanel
 
 	private void initializePanel()
 	{
-		setLayout(new GridLayout(3, 1, 0, 5));
-		setBorder(new EmptyBorder(8, 10, 8, 10));
-		setBackground(ColorScheme.DARK_GRAY_COLOR);
+		updateLayout();
+	}
 
+	public void updateLayout()
+	{
+		removeAll();
+
+		boolean compactMode = plugin.getConfig().preferSmallerStatsPanel();
+
+		if (compactMode)
+		{
+			setLayout(new BorderLayout());
+			setBorder(new EmptyBorder(5, 10, 5, 10));
+			add(createCompactStatsPanel(), BorderLayout.CENTER);
+		}
+		else
+		{
+			setLayout(new GridLayout(3, 1, 0, 5));
+			setBorder(new EmptyBorder(8, 10, 8, 10));
+
+			setupStatsLabels();
+
+			JPanel totalCard = createStatCard("Total Progress", totalPointsLabel, ColorScheme.BRAND_ORANGE, false);
+			JPanel trackedCard = createStatCard("Tracked Tasks", trackedPointsLabel, new Color(50, 150, 150), false);
+			JPanel goalCard = createStatCard("Goal Progress", goalLabel, new Color(120, 160, 80), false);
+
+			add(totalCard);
+			add(trackedCard);
+			add(goalCard);
+		}
+
+		setBackground(ColorScheme.DARK_GRAY_COLOR);
+		revalidate();
+		repaint();
+	}
+
+	private JPanel createCompactStatsPanel()
+	{
 		setupStatsLabels();
 
-		JPanel totalCard = createStatCard("Total Progress", totalPointsLabel, ColorScheme.BRAND_ORANGE);
-		JPanel trackedCard = createStatCard("Tracked Tasks", trackedPointsLabel, new Color(50, 150, 150));
-		JPanel goalCard = createStatCard("Goal Progress", goalLabel, new Color(120, 160, 80));
+		JPanel compactPanel = new JPanel();
+		compactPanel.setLayout(new BoxLayout(compactPanel, BoxLayout.Y_AXIS));
+		compactPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		compactPanel.setBorder(BorderFactory.createCompoundBorder(
+			new LineBorder(ColorScheme.MEDIUM_GRAY_COLOR, 1),
+			new EmptyBorder(4, 6, 4, 6)
+		));
 
-		add(totalCard);
-		add(trackedCard);
-		add(goalCard);
+		// Total Progress Row
+		JPanel totalRow = createCompactRow(totalPointsLabel, ColorScheme.BRAND_ORANGE);
+		compactPanel.add(totalRow);
+
+		// Tracked Tasks Row
+		JPanel trackedRow = createCompactRow(trackedPointsLabel, new Color(50, 150, 150));
+		compactPanel.add(trackedRow);
+
+		// Goal Progress Row
+		JPanel goalRow = createCompactRow(goalLabel, new Color(120, 160, 80));
+		compactPanel.add(goalRow);
+
+		return compactPanel;
+	}
+
+	private JPanel createCompactRow(JLabel label, Color accentColor)
+	{
+		JPanel row = new JPanel(new BorderLayout());
+		row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		row.setBorder(new EmptyBorder(2, 0, 2, 0));
+
+		JPanel accentLine = new JPanel();
+		accentLine.setBackground(accentColor);
+		accentLine.setPreferredSize(new Dimension(3, 0));
+
+		label.setHorizontalAlignment(SwingConstants.LEFT);
+		label.setBorder(new EmptyBorder(0, 6, 0, 0));
+
+		row.add(accentLine, BorderLayout.WEST);
+		row.add(label, BorderLayout.CENTER);
+
+		return row;
 	}
 
 	private void setupStatsLabels()
@@ -86,14 +153,25 @@ public class StatsPanel extends JPanel
 		goalLabel.setForeground(Color.GREEN);
 	}
 
-	private JPanel createStatCard(String title, JLabel valueLabel, Color accentColor)
+	private JPanel createStatCard(String title, JLabel valueLabel, Color accentColor, boolean compactMode)
 	{
 		JPanel card = new JPanel(new BorderLayout());
 		card.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		card.setBorder(BorderFactory.createCompoundBorder(
-			new LineBorder(ColorScheme.MEDIUM_GRAY_COLOR, 1),
-			new EmptyBorder(6, 8, 6, 8)
-		));
+
+		if (compactMode)
+		{
+			card.setBorder(BorderFactory.createCompoundBorder(
+				new LineBorder(ColorScheme.MEDIUM_GRAY_COLOR, 1),
+				new EmptyBorder(4, 6, 4, 6)
+			));
+		}
+		else
+		{
+			card.setBorder(BorderFactory.createCompoundBorder(
+				new LineBorder(ColorScheme.MEDIUM_GRAY_COLOR, 1),
+				new EmptyBorder(6, 8, 6, 8)
+			));
+		}
 
 		JLabel titleLabel = new JLabel(title);
 		titleLabel.setFont(FontManager.getRunescapeSmallFont());
@@ -107,9 +185,9 @@ public class StatsPanel extends JPanel
 		accentLine.setBackground(accentColor);
 		accentLine.setPreferredSize(new Dimension(3, 0));
 
-		JPanel content = new JPanel(new GridLayout(2, 1, 0, 2));
+		JPanel content = new JPanel(new GridLayout(2, 1, 0, compactMode ? 1 : 2));
 		content.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		content.setBorder(new EmptyBorder(0, 8, 0, 0));
+		content.setBorder(new EmptyBorder(0, compactMode ? 6 : 8, 0, 0));
 		content.add(titleLabel);
 		content.add(valueLabel);
 

@@ -45,6 +45,7 @@ import net.runelite.api.events.GameTick;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -202,6 +203,21 @@ public class CombatAchievementsPlugin extends Plugin
 				}
 			}
 		});
+	}
+
+	@Subscribe
+	public void onConfigChanged(ConfigChanged configChanged)
+	{
+		if (configChanged.getGroup().equals(CombatAchievementsConfig.CONFIG_GROUP_NAME))
+		{
+			if (configChanged.getKey().equals("preferSmallerStatsPanel"))
+			{
+				if (panel != null)
+				{
+					panel.onConfigChanged();
+				}
+			}
+		}
 	}
 
 	@Provides

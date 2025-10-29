@@ -66,6 +66,8 @@ public class CombatAchievementsPanel extends PluginPanel
 	@Getter
 	private final IconTextField searchBar;
 	private final JPanel headerPanel = new JPanel(new BorderLayout());
+	private final JButton toggleStatsButton = new JButton();
+	private final JButton toggleFiltersButton = new JButton();
 	private final JPanel tabButtonsPanel = new JPanel();
 	private final JButton allTasksButton = new JButton("All Tasks");
 	private final JButton trackedTasksButton = new JButton("Tracked");
@@ -93,6 +95,8 @@ public class CombatAchievementsPanel extends PluginPanel
 	private List<CombatAchievement> trackedAchievements = new ArrayList<>();
 	private String currentSearchText = "";
 	private final Map<Integer, CombatAchievementPanel> achievementPanels = new HashMap<>();
+	private boolean statsVisible = true;
+	private boolean filtersVisible = true;
 
 	private enum ViewMode
 	{
@@ -252,12 +256,40 @@ public class CombatAchievementsPanel extends PluginPanel
 		titleLabel.setForeground(Color.WHITE);
 		titleLabel.setBorder(new EmptyBorder(10, 10, 5, 10));
 
+		// Setup toggle buttons
+		toggleStatsButton.setIcon(new ImageIcon(ImageUtil.rotateImage((BufferedImage) IconLoader.loadArrowRight().getImage(), Math.PI / 2)));
+		toggleStatsButton.setFont(FontManager.getRunescapeSmallFont());
+		toggleStatsButton.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		toggleStatsButton.setForeground(Color.WHITE);
+		toggleStatsButton.setBorder(new EmptyBorder(5, 5, 5, 5));
+		toggleStatsButton.setFocusPainted(false);
+		toggleStatsButton.setToolTipText("Toggle Stats");
+		toggleStatsButton.addActionListener(e -> toggleStats());
+
+		toggleFiltersButton.setIcon(new ImageIcon(ImageUtil.rotateImage((BufferedImage) IconLoader.loadArrowRight().getImage(), Math.PI / 2)));
+		toggleFiltersButton.setFont(FontManager.getRunescapeSmallFont());
+		toggleFiltersButton.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		toggleFiltersButton.setForeground(Color.WHITE);
+		toggleFiltersButton.setBorder(new EmptyBorder(5, 5, 5, 5));
+		toggleFiltersButton.setFocusPainted(false);
+		toggleFiltersButton.setToolTipText("Toggle Filters");
+		toggleFiltersButton.addActionListener(e -> toggleFilters());
+
+		JPanel toggleButtonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
+		toggleButtonsPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		toggleButtonsPanel.add(toggleStatsButton);
+		toggleButtonsPanel.add(toggleFiltersButton);
+
+		JPanel titleContainer = new JPanel(new BorderLayout());
+		titleContainer.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		titleContainer.add(titleLabel, BorderLayout.CENTER);
+		titleContainer.add(toggleButtonsPanel, BorderLayout.EAST);
+
 		JPanel searchBarContainer = new JPanel(new BorderLayout());
-		searchBarContainer.setBorder(new EmptyBorder(6, 10, 2, 10));
+		searchBarContainer.setBorder(new EmptyBorder(6, 10, 6, 10));
 		searchBarContainer.add(searchBar, BorderLayout.CENTER);
 
-		headerPanel.add(titleLabel, BorderLayout.NORTH);
-		headerPanel.add(searchBarContainer, BorderLayout.CENTER);
+		headerPanel.add(titleContainer, BorderLayout.CENTER);
 
 		setLayout(new BorderLayout());
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -269,6 +301,7 @@ public class CombatAchievementsPanel extends PluginPanel
 		fixedContent.add(headerPanel);
 		fixedContent.add(statsPanel);
 		fixedContent.add(filterPanel);
+		fixedContent.add(searchBarContainer);
 		fixedContent.add(tabButtonsPanel);
 		fixedContent.add(bossHeaderPanel);
 
@@ -768,5 +801,52 @@ public class CombatAchievementsPanel extends PluginPanel
 	public List<CombatAchievement> getAllAchievements()
 	{
 		return allAchievements;
+	}
+
+	private void toggleStats()
+	{
+		statsVisible = !statsVisible;
+		statsPanel.setVisible(statsVisible);
+
+		// Rotate the toggle button icon
+		if (statsVisible)
+		{
+			toggleStatsButton.setIcon(new ImageIcon(ImageUtil.rotateImage((BufferedImage) IconLoader.loadArrowRight().getImage(), Math.PI / 2)));
+		}
+		else
+		{
+			toggleStatsButton.setIcon(new ImageIcon(ImageUtil.rotateImage((BufferedImage) IconLoader.loadArrowRight().getImage(), -Math.PI / 2)));
+		}
+
+		revalidate();
+		repaint();
+	}
+
+	private void toggleFilters()
+	{
+		filtersVisible = !filtersVisible;
+		filterPanel.setVisible(filtersVisible);
+
+		// Rotate the toggle button icon
+		if (filtersVisible)
+		{
+			toggleFiltersButton.setIcon(new ImageIcon(ImageUtil.rotateImage((BufferedImage) IconLoader.loadArrowRight().getImage(), Math.PI / 2)));
+		}
+		else
+		{
+			toggleFiltersButton.setIcon(new ImageIcon(ImageUtil.rotateImage((BufferedImage) IconLoader.loadArrowRight().getImage(), -Math.PI / 2)));
+		}
+
+		revalidate();
+		repaint();
+	}
+
+	public void onConfigChanged()
+	{
+		SwingUtilities.invokeLater(() -> {
+			statsPanel.updateLayout();
+			revalidate();
+			repaint();
+		});
 	}
 }

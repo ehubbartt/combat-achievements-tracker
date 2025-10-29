@@ -42,9 +42,16 @@ public interface CombatAchievementsConfig extends Config
 	String listSection = "list";
 
 	@ConfigSection(
+		name = "UI Settings",
+		description = "Configure the user interface",
+		position = 1
+	)
+	String uiSection = "ui";
+
+	@ConfigSection(
 		name = "Notifications",
 		description = "Configure completion notifications",
-		position = 1
+		position = 2
 	)
 	String notificationSection = "notifications";
 
@@ -58,6 +65,19 @@ public interface CombatAchievementsConfig extends Config
 	default TierGoal tierGoal()
 	{
 		return TierGoal.TIER_AUTO;
+	}
+
+	// UI Settings
+	@ConfigItem(
+		keyName = "preferSmallerStatsPanel",
+		name = "Prefer Smaller Stats Panel",
+		description = "Use a more compact stats panel that takes up less vertical space",
+		section = uiSection,
+		position = 0
+	)
+	default boolean preferSmallerStatsPanel()
+	{
+		return false;
 	}
 
 	// Notifications
