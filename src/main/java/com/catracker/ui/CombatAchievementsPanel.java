@@ -62,6 +62,7 @@ public class CombatAchievementsPanel extends PluginPanel
 
 	private ViewMode currentViewMode = ViewMode.ALL_TASKS;
 	private String selectedBoss = null;
+	private CombatAchievement selectedAchievement = null;
 
 	@Getter
 	private final IconTextField searchBar;
@@ -231,7 +232,14 @@ public class CombatAchievementsPanel extends PluginPanel
 		backButton.setFocusPainted(false);
 		backButton.addActionListener(e ->
 		{
-			selectedBoss = null;
+			if (selectedAchievement != null)
+			{
+				selectedAchievement = null;
+			}
+			else
+			{
+				selectedBoss = null;
+			}
 			refreshContent();
 		});
 
@@ -387,7 +395,12 @@ public class CombatAchievementsPanel extends PluginPanel
 			contentContainer.removeAll();
 			achievementPanels.clear();
 
-			if (currentViewMode == ViewMode.BOSSES && selectedBoss != null)
+			if (selectedAchievement != null)
+			{
+				bossTitle.setText(selectedAchievement.getName());
+				bossHeaderPanel.setVisible(true);
+			}
+			else if (currentViewMode == ViewMode.BOSSES && selectedBoss != null)
 			{
 				bossTitle.setText(selectedBoss);
 				bossHeaderPanel.setVisible(true);
@@ -397,22 +410,29 @@ public class CombatAchievementsPanel extends PluginPanel
 				bossHeaderPanel.setVisible(false);
 			}
 
-			switch (currentViewMode)
+			if (selectedAchievement != null)
 			{
-				case BOSSES:
-					if (selectedBoss == null)
-					{
-						displayBossGrid();
-					}
-					else
-					{
-						displayBossAchievements();
-					}
-					break;
-				case ALL_TASKS:
-				case TRACKED_TASKS:
-					displayAchievementsList();
-					break;
+				displayAchievementDetail();
+			}
+			else
+			{
+				switch (currentViewMode)
+				{
+					case BOSSES:
+						if (selectedBoss == null)
+						{
+							displayBossGrid();
+						}
+						else
+						{
+							displayBossAchievements();
+						}
+						break;
+					case ALL_TASKS:
+					case TRACKED_TASKS:
+						displayAchievementsList();
+						break;
+				}
 			}
 
 			updateStats();
@@ -454,6 +474,162 @@ public class CombatAchievementsPanel extends PluginPanel
 
 		List<CombatAchievement> filteredAchievements = getFilteredAchievements(bossAchievements);
 		displayAchievementPanels(filteredAchievements, "No achievements found for " + selectedBoss + " given current filter settings");
+	}
+
+	private void displayAchievementDetail()
+	{
+		if (selectedAchievement == null)
+		{
+			return;
+		}
+
+		// Create outer panel with BorderLayout to anchor content to top
+		JPanel outerPanel = new JPanel(new BorderLayout());
+		outerPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+
+		// Create detail panel with achievement info
+		JPanel detailPanel = new JPanel();
+		detailPanel.setLayout(new BoxLayout(detailPanel, BoxLayout.Y_AXIS));
+		detailPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		detailPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+		// Add tier icon and name
+		JPanel nameSection = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+		nameSection.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		nameSection.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+		ImageIcon tierIcon = com.catracker.ui.util.IconLoader.loadTierIcon(selectedAchievement.getTier());
+		if (tierIcon != null)
+		{
+			JLabel tierIconLabel = new JLabel(tierIcon);
+			nameSection.add(tierIconLabel);
+		}
+
+		JLabel nameLabel = new JLabel(selectedAchievement.getName());
+		nameLabel.setFont(FontManager.getRunescapeBoldFont());
+		nameLabel.setForeground(selectedAchievement.isCompleted() ? Color.GREEN :
+			selectedAchievement.isTracked() ? new Color(100, 149, 237) : ColorScheme.BRAND_ORANGE);
+		nameSection.add(nameLabel);
+
+		detailPanel.add(nameSection);
+		detailPanel.add(Box.createVerticalStrut(5));
+
+		// Description
+		JTextArea descriptionArea = new JTextArea(selectedAchievement.getDescription());
+		descriptionArea.setFont(FontManager.getRunescapeSmallFont());
+		descriptionArea.setForeground(Color.LIGHT_GRAY);
+		descriptionArea.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		descriptionArea.setEditable(false);
+		descriptionArea.setFocusable(false);
+		descriptionArea.setWrapStyleWord(true);
+		descriptionArea.setLineWrap(true);
+		descriptionArea.setAlignmentX(Component.LEFT_ALIGNMENT);
+		descriptionArea.setBorder(new EmptyBorder(0, 0, 3, 0));
+		detailPanel.add(descriptionArea);
+
+		// Info rows
+		detailPanel.add(createInfoRow("Tier:", selectedAchievement.getTier()));
+		detailPanel.add(createInfoRow("Points:", String.valueOf(selectedAchievement.getPoints())));
+
+		if (selectedAchievement.getBossName() != null && !selectedAchievement.getBossName().equals("Unknown"))
+		{
+			detailPanel.add(createInfoRow("Boss:", selectedAchievement.getBossName()));
+		}
+
+		if (selectedAchievement.getType() != null && !selectedAchievement.getType().isEmpty())
+		{
+			detailPanel.add(createInfoRow("Type:", selectedAchievement.getType()));
+		}
+
+		if (selectedAchievement.getCompletionPercentage() != null)
+		{
+			String completionText = String.format("%.1f%%", selectedAchievement.getCompletionPercentage());
+			detailPanel.add(createInfoRow("Wiki Completion%:", completionText));
+		}
+		else
+		{
+			detailPanel.add(createInfoRow("Wiki Completion%:", "Unknown"));
+		}
+
+		detailPanel.add(Box.createVerticalStrut(5));
+
+		// Status
+		JLabel statusLabel = new JLabel();
+		statusLabel.setFont(FontManager.getRunescapeSmallFont());
+		statusLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		if (selectedAchievement.isCompleted())
+		{
+			statusLabel.setText("Status: Completed");
+			statusLabel.setForeground(Color.GREEN);
+		}
+		else
+		{
+			statusLabel.setText("Status: Incomplete");
+			statusLabel.setForeground(Color.RED);
+		}
+		detailPanel.add(statusLabel);
+
+		if (selectedAchievement.isTracked())
+		{
+			JLabel trackedLabel = new JLabel("Tracked");
+			trackedLabel.setFont(FontManager.getRunescapeSmallFont());
+			trackedLabel.setForeground(new Color(100, 149, 237));
+			trackedLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+			detailPanel.add(trackedLabel);
+		}
+
+		detailPanel.add(Box.createVerticalStrut(10));
+
+		// Open in Wiki button
+		JButton wikiButton = new JButton("Open in Wiki");
+		wikiButton.setFont(FontManager.getRunescapeSmallFont());
+		wikiButton.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		wikiButton.setForeground(Color.WHITE);
+		wikiButton.setBorder(BorderFactory.createCompoundBorder(
+			new LineBorder(ColorScheme.BRAND_ORANGE, 1),
+			new EmptyBorder(5, 10, 5, 10)
+		));
+		wikiButton.setFocusPainted(false);
+		wikiButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+		wikiButton.addActionListener(e -> openWikiForAchievement(selectedAchievement));
+		detailPanel.add(wikiButton);
+
+		// Add detailPanel to the top (NORTH) of outerPanel
+		outerPanel.add(detailPanel, BorderLayout.NORTH);
+
+		contentContainer.add(outerPanel);
+	}
+
+	private void openWikiForAchievement(CombatAchievement achievement)
+	{
+		try
+		{
+			net.runelite.client.util.LinkBrowser.browse(achievement.getWikiUrl());
+		}
+		catch (Exception ex)
+		{
+			log.error("Failed to open wiki link: {}", achievement.getWikiUrl(), ex);
+		}
+	}
+
+	private JPanel createInfoRow(String label, String value)
+	{
+		JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+		row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		row.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+		JLabel labelComponent = new JLabel(label + " ");
+		labelComponent.setFont(FontManager.getRunescapeSmallFont());
+		labelComponent.setForeground(Color.LIGHT_GRAY);
+
+		JLabel valueComponent = new JLabel(value);
+		valueComponent.setFont(FontManager.getRunescapeSmallFont());
+		valueComponent.setForeground(Color.WHITE);
+
+		row.add(labelComponent);
+		row.add(valueComponent);
+
+		return row;
 	}
 
 	private void displayAchievementsList()
@@ -856,7 +1032,8 @@ public class CombatAchievementsPanel extends PluginPanel
 
 	public void onConfigChanged()
 	{
-		SwingUtilities.invokeLater(() -> {
+		SwingUtilities.invokeLater(() ->
+		{
 			statsPanel.updateLayout();
 			revalidate();
 			repaint();
@@ -865,7 +1042,8 @@ public class CombatAchievementsPanel extends PluginPanel
 
 	public void openInBossesTab(String bossName)
 	{
-		SwingUtilities.invokeLater(() -> {
+		SwingUtilities.invokeLater(() ->
+		{
 			// Switch to bosses view
 			currentViewMode = ViewMode.BOSSES;
 			selectedBoss = bossName;
@@ -876,6 +1054,15 @@ public class CombatAchievementsPanel extends PluginPanel
 			styleTabButton(bossesButton, true);
 
 			// Refresh content to show the boss achievements
+			refreshContent();
+		});
+	}
+
+	public void showAchievementDetail(CombatAchievement achievement)
+	{
+		SwingUtilities.invokeLater(() ->
+		{
+			selectedAchievement = achievement;
 			refreshContent();
 		});
 	}

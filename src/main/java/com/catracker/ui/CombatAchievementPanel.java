@@ -37,6 +37,7 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import javax.swing.Timer;
 
 @Slf4j
 public class CombatAchievementPanel extends JPanel
@@ -228,6 +229,18 @@ public class CombatAchievementPanel extends JPanel
 					showContextMenu(e);
 				}
 			}
+
+			@Override
+			public void mouseEntered(MouseEvent e)
+			{
+				setToolTipText(createTooltip());
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e)
+			{
+				setToolTipText(null);
+			}
 		});
 	}
 
@@ -238,6 +251,11 @@ public class CombatAchievementPanel extends JPanel
 		JMenuItem wikiItem = new JMenuItem("Open Wiki");
 		wikiItem.addActionListener(event -> openWikiLink());
 		popup.add(wikiItem);
+
+		// Add "Show More Info" option
+		JMenuItem moreInfoItem = new JMenuItem("Show More Info");
+		moreInfoItem.addActionListener(event -> plugin.getPanel().showAchievementDetail(achievement));
+		popup.add(moreInfoItem);
 
 		// Add "Open in Bosses Tab" option if boss name is available
 		String bossName = achievement.getBossName();
@@ -390,7 +408,7 @@ public class CombatAchievementPanel extends JPanel
 			setupTierIcon();
 			updateAllBackgrounds();
 			updateTrackButton();
-			setToolTipText(createTooltip());
+			// Don't set tooltip immediately, let hover handle it
 			revalidate();
 			repaint();
 		});
