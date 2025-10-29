@@ -139,12 +139,7 @@ public class CombatAchievementsPlugin extends Plugin
 	{
 		log.debug("Game state changed: {}", gameStateChanged.getGameState());
 
-		if (gameStateChanged.getGameState() == GameState.LOGGED_IN && !hasLoadedThisSession)
-		{
-			dataLoader.requestDataLoad();
-			hasLoadedThisSession = true;
-		}
-		else if (gameStateChanged.getGameState() == GameState.LOGIN_SCREEN ||
+		if (gameStateChanged.getGameState() == GameState.LOGIN_SCREEN ||
 			gameStateChanged.getGameState() == GameState.CONNECTION_LOST)
 		{
 			hasLoadedThisSession = false;
@@ -154,6 +149,13 @@ public class CombatAchievementsPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick gameTick)
 	{
+		// Handle the case where the plugin is installed while already logged in
+		if (client.getGameState() == GameState.LOGGED_IN && !hasLoadedThisSession)
+		{
+			dataLoader.requestDataLoad();
+			hasLoadedThisSession = true;
+		}
+
 		dataLoader.handleGameTick(panel, completionPercentageLoader);
 	}
 
