@@ -61,7 +61,8 @@ public class BossGridPanel extends JPanel
 		this.bossClickCallback = callback;
 	}
 
-	public void displayBossGrid(List<CombatAchievement> allAchievements, String currentSearchText)
+	public void displayBossGrid(List<CombatAchievement> allAchievements, String currentSearchText,
+								String statusFilter, String typeFilter, String sortOption, boolean sortAscending)
 	{
 		removeAll();
 
@@ -79,11 +80,14 @@ public class BossGridPanel extends JPanel
 			return;
 		}
 
-		List<String> sortedBosses = bossStatsMap.keySet().stream()
+		List<String> filteredBosses = bossStatsMap.keySet().stream()
 			.filter(boss -> boss != null && !boss.equals("Unknown") && !boss.trim().isEmpty())
 			.filter(boss -> matchesBossSearch(boss, currentSearchText))
-			.sorted()
+			.filter(boss -> matchesBossStatus(boss, bossStatsMap.get(boss), statusFilter))
+			.filter(boss -> matchesBossType(boss, allAchievements, typeFilter))
 			.collect(Collectors.toList());
+
+		List<String> sortedBosses = sortBosses(filteredBosses, bossStatsMap, allAchievements, sortOption, sortAscending);
 
 		if (sortedBosses.isEmpty())
 		{
@@ -222,5 +226,140 @@ public class BossGridPanel extends JPanel
 			return true;
 		}
 		return bossName.toLowerCase().contains(searchText.toLowerCase());
+	}
+
+	private boolean matchesBossStatus(String bossName, BossStats stats, String statusFilter)
+	{
+		if (statusFilter == null || statusFilter.equals("All"))
+		{
+			return true;
+		}
+
+		boolean isFullyCompleted = stats.completed == stats.total && stats.total > 0;
+
+		if (statusFilter.equals("Completed"))
+		{
+			return isFullyCompleted;
+		}
+		else if (statusFilter.equals("Incomplete"))
+		{
+			return !isFullyCompleted;
+		}
+
+		return true;
+	}
+
+	private boolean matchesBossType(String bossName, List<CombatAchievement> allAchievements, String typeFilter)
+	{
+		if (typeFilter == null || typeFilter.equals("All Types"))
+		{
+			return true;
+		}
+
+		// Check if any achievement for this boss has the specified type
+		return allAchievements.stream()
+			.filter(achievement -> bossName.equals(achievement.getBossName()))
+			.anyMatch(achievement -> typeFilter.equals(achievement.getType()));
+	}
+
+	private List<String> sortBosses(List<String> bosses, Map<String, BossStats> bossStatsMap,
+									 List<CombatAchievement> allAchievements, String sortOption, boolean sortAscending)
+	{
+		if (sortOption == null || sortOption.equals("Tier"))
+		{
+			// Default alphabetical sort
+			bosses.sort(String::compareTo);
+			if (!sortAscending)
+			{
+				java.util.Collections.reverse(bosses);
+			}
+			return bosses;
+		}
+
+		switch (sortOption)
+		{
+			case "Name":
+				bosses.sort(String::compareTo);
+				if (!sortAscending)
+				{
+					java.util.Collections.reverse(bosses);
+				}
+				break;
+
+			case "Completion":
+				bosses.sort((a, b) -> {
+					BossStats statsA = bossStatsMap.get(a);
+					BossStats statsB = bossStatsMap.get(b);
+					boolean aComplete = statsA.completed == statsA.total && statsA.total > 0;
+					boolean bComplete = statsB.completed == statsB.total && statsB.total > 0;
+
+					if (sortAscending)
+					{
+						// Incomplete first, then complete
+						return Boolean.compare(aComplete, bComplete);
+					}
+					else
+					{
+						// Complete first, then incomplete
+						return Boolean.compare(bComplete, aComplete);
+					}
+				});
+				break;
+
+			case "Completion %":
+				bosses.sort((a, b) -> {
+					double avgA = getAverageCompletionPercent(a, allAchievements);
+					double avgB = getAverageCompletionPercent(b, allAchievements);
+
+					if (sortAscending)
+					{
+						// Ascending: highest first
+						return Double.compare(avgB, avgA);
+					}
+					else
+					{
+						// Descending: lowest first
+						return Double.compare(avgA, avgB);
+					}
+				});
+				break;
+
+			default:
+				bosses.sort(String::compareTo);
+				if (!sortAscending)
+				{
+					java.util.Collections.reverse(bosses);
+				}
+				break;
+		}
+
+		return bosses;
+	}
+
+	private double getAverageCompletionPercent(String bossName, List<CombatAchievement> allAchievements)
+	{
+		List<CombatAchievement> bossAchievements = allAchievements.stream()
+			.filter(achievement -> bossName.equals(achievement.getBossName()))
+			.collect(Collectors.toList());
+
+		if (bossAchievements.isEmpty())
+		{
+			return 0.0;
+		}
+
+		double sum = 0.0;
+		int count = 0;
+
+		for (CombatAchievement achievement : bossAchievements)
+		{
+			Double completionPercent = achievement.getCompletionPercentage();
+			if (completionPercent != null)
+			{
+				sum += completionPercent;
+				count++;
+			}
+		}
+
+		return count > 0 ? sum / count : 0.0;
 	}
 }

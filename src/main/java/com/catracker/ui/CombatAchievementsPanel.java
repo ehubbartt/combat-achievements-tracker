@@ -432,7 +432,11 @@ public class CombatAchievementsPanel extends PluginPanel
 	private void displayBossGrid()
 	{
 		contentContainer.add(bossGridPanel);
-		bossGridPanel.displayBossGrid(allAchievements, currentSearchText);
+		String statusFilter = filterPanel.getSelectedStatusFilter();
+		String typeFilter = filterPanel.getSelectedTypeFilter();
+		String sortOption = filterPanel.getSelectedSortFilter();
+		boolean sortAscending = filterPanel.isSortAscending();
+		bossGridPanel.displayBossGrid(allAchievements, currentSearchText, statusFilter, typeFilter, sortOption, sortAscending);
 	}
 
 	private void displayBossAchievements()
