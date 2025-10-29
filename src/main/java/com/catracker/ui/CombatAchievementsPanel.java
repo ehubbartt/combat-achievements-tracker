@@ -31,6 +31,7 @@ import com.catracker.model.CombatAchievement;
 import com.catracker.ui.components.BossGridPanel;
 import com.catracker.ui.components.FilterPanel;
 import com.catracker.ui.components.StatsPanel;
+import com.catracker.ui.util.IconLoader;
 import com.google.gson.reflect.TypeToken;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,7 @@ import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.ui.components.IconTextField;
+import net.runelite.client.util.ImageUtil;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -45,6 +47,7 @@ import javax.swing.border.LineBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -70,12 +73,21 @@ public class CombatAchievementsPanel extends PluginPanel
 	private final JScrollPane contentScrollPane = new JScrollPane();
 	private final JPanel contentContainer = new JPanel();
 	private final JPanel bossHeaderPanel = new JPanel(new BorderLayout());
-	private final JButton backButton = new JButton("<");
+	private final JButton backButton = new JButton();
 	private final JLabel bossTitle = new JLabel();
 
 	private final StatsPanel statsPanel;
 	private final FilterPanel filterPanel;
 	private final BossGridPanel bossGridPanel;
+
+	private static final ImageIcon LEFT_ARROW;
+
+	static
+	{
+		ImageIcon rightArrow = IconLoader.loadArrowRight();
+		BufferedImage rightArrowImg = (BufferedImage) rightArrow.getImage();
+		LEFT_ARROW = new ImageIcon(ImageUtil.rotateImage(rightArrowImg, Math.PI));
+	}
 
 	private List<CombatAchievement> allAchievements = new ArrayList<>();
 	private List<CombatAchievement> trackedAchievements = new ArrayList<>();
@@ -198,6 +210,7 @@ public class CombatAchievementsPanel extends PluginPanel
 		bossHeaderPanel.setBorder(new EmptyBorder(5, 10, 5, 10));
 		bossHeaderPanel.setVisible(false);
 
+		backButton.setIcon(LEFT_ARROW);
 		backButton.setFont(FontManager.getRunescapeSmallFont());
 		backButton.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		backButton.setForeground(Color.WHITE);
