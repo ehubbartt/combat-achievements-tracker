@@ -387,7 +387,7 @@ public class CombatAchievementsPanel extends PluginPanel
 			.collect(Collectors.toList());
 
 		List<CombatAchievement> filteredAchievements = getFilteredAchievements(bossAchievements);
-		displayAchievementPanels(filteredAchievements, "No achievements found for " + selectedBoss);
+		displayAchievementPanels(filteredAchievements, "No achievements found for " + selectedBoss + " given current filter settings");
 	}
 
 	private void displayAchievementsList()
@@ -406,10 +406,14 @@ public class CombatAchievementsPanel extends PluginPanel
 	{
 		if (achievements.isEmpty())
 		{
-			JLabel emptyLabel = new JLabel(emptyMessage);
+			JTextArea emptyLabel = new JTextArea(emptyMessage);
 			emptyLabel.setFont(FontManager.getRunescapeSmallFont());
 			emptyLabel.setForeground(Color.GRAY);
-			emptyLabel.setHorizontalAlignment(JLabel.CENTER);
+			emptyLabel.setBackground(ColorScheme.DARK_GRAY_COLOR);
+			emptyLabel.setEditable(false);
+			emptyLabel.setFocusable(false);
+			emptyLabel.setWrapStyleWord(true);
+			emptyLabel.setLineWrap(true);
 			emptyLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 			emptyLabel.setBorder(new EmptyBorder(20, 10, 20, 10));
 			contentContainer.add(emptyLabel);
