@@ -133,7 +133,6 @@ public class CombatAchievementPanel extends JPanel
 		descriptionArea.setFont(FontManager.getRunescapeSmallFont());
 		descriptionArea.setForeground(Color.LIGHT_GRAY);
 		descriptionArea.setBackground(getBackgroundColor());
-		descriptionArea.setText(truncateToTwoLines(achievement.getDescription()));
 		descriptionArea.setLineWrap(true);
 		descriptionArea.setWrapStyleWord(true);
 		descriptionArea.setEditable(false);
@@ -142,6 +141,7 @@ public class CombatAchievementPanel extends JPanel
 		descriptionArea.setDisabledTextColor(Color.LIGHT_GRAY);
 		descriptionArea.setBorder(null);
 		descriptionArea.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		descriptionArea.setText(truncateToTwoLines(achievement.getDescription()));
 
 		descriptionPanel.add(descriptionArea, BorderLayout.CENTER);
 		centerPanel.add(descriptionPanel);
