@@ -436,7 +436,8 @@ public class CombatAchievementsPanel extends PluginPanel
 		String typeFilter = filterPanel.getSelectedTypeFilter();
 		String sortOption = filterPanel.getSelectedSortFilter();
 		boolean sortAscending = filterPanel.isSortAscending();
-		bossGridPanel.displayBossGrid(allAchievements, currentSearchText, statusFilter, typeFilter, sortOption, sortAscending);
+		Map<String, Boolean> selectedTiers = filterPanel.getSelectedTiers();
+		bossGridPanel.displayBossGrid(allAchievements, currentSearchText, statusFilter, typeFilter, sortOption, sortAscending, selectedTiers);
 	}
 
 	private void displayBossAchievements()

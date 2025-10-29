@@ -62,7 +62,8 @@ public class BossGridPanel extends JPanel
 	}
 
 	public void displayBossGrid(List<CombatAchievement> allAchievements, String currentSearchText,
-								String statusFilter, String typeFilter, String sortOption, boolean sortAscending)
+								String statusFilter, String typeFilter, String sortOption, boolean sortAscending,
+								Map<String, Boolean> selectedTiers)
 	{
 		removeAll();
 
@@ -85,6 +86,7 @@ public class BossGridPanel extends JPanel
 			.filter(boss -> matchesBossSearch(boss, currentSearchText))
 			.filter(boss -> matchesBossStatus(boss, bossStatsMap.get(boss), statusFilter))
 			.filter(boss -> matchesBossType(boss, allAchievements, typeFilter))
+			.filter(boss -> matchesBossTiers(boss, allAchievements, selectedTiers))
 			.collect(Collectors.toList());
 
 		List<String> sortedBosses = sortBosses(filteredBosses, bossStatsMap, allAchievements, sortOption, sortAscending);
@@ -260,6 +262,19 @@ public class BossGridPanel extends JPanel
 		return allAchievements.stream()
 			.filter(achievement -> bossName.equals(achievement.getBossName()))
 			.anyMatch(achievement -> typeFilter.equals(achievement.getType()));
+	}
+
+	private boolean matchesBossTiers(String bossName, List<CombatAchievement> allAchievements, Map<String, Boolean> selectedTiers)
+	{
+		if (selectedTiers == null || selectedTiers.isEmpty())
+		{
+			return true;
+		}
+
+		// Check if any achievement for this boss has a tier that is selected
+		return allAchievements.stream()
+			.filter(achievement -> bossName.equals(achievement.getBossName()))
+			.anyMatch(achievement -> selectedTiers.getOrDefault(achievement.getTier(), false));
 	}
 
 	private List<String> sortBosses(List<String> bosses, Map<String, BossStats> bossStatsMap,
