@@ -160,6 +160,19 @@ public class CombatAchievementPanel extends JPanel
 			@Override
 			public void mousePressed(MouseEvent e)
 			{
+				// Check for popup trigger (right-click) - show context menu
+				if (e.isPopupTrigger())
+				{
+					showContextMenu(e);
+					return;
+				}
+
+				// Only expand on left click, not right click (right click is for context menu)
+				if (!SwingUtilities.isLeftMouseButton(e))
+				{
+					return;
+				}
+
 				// Check if click originated from track button - if so, ignore
 				Component source = (Component) e.getSource();
 				if (source == trackButton || SwingUtilities.isDescendingFrom(source, trackButton))
@@ -167,6 +180,16 @@ public class CombatAchievementPanel extends JPanel
 					return;
 				}
 				toggleExpanded();
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent e)
+			{
+				// Check for popup trigger on release (for some platforms)
+				if (e.isPopupTrigger())
+				{
+					showContextMenu(e);
+				}
 			}
 
 			@Override
