@@ -561,12 +561,6 @@ public class CombatAchievementsPanel extends PluginPanel
 			return false;
 		}
 
-		String selectedTier = filterPanel.getSelectedTierFilter();
-		if (!"All Tiers".equals(selectedTier) && !achievement.getTier().equals(selectedTier))
-		{
-			return false;
-		}
-
 		if (!filterPanel.getSelectedTiers().getOrDefault(achievement.getTier(), true))
 		{
 			return false;

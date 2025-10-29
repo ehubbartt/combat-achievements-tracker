@@ -44,17 +44,12 @@ public class FilterPanel extends JPanel
 {
 
 	private boolean filtersExpanded = false;
-	private boolean tiersExpanded = false;
 	private boolean sortAscending = true;
 
 	private final JPanel filtersSection = new JPanel();
 	private final JButton filtersToggleButton = new JButton("Filters");
 	private final JPanel filtersPanel = new JPanel();
-	private final JPanel tiersSection = new JPanel();
-	private final JButton tiersToggleButton = new JButton("Tiers");
-	private final JPanel tiersPanel = new JPanel();
 
-	private final JComboBox<String> tierFilter = new JComboBox<>();
 	private final JComboBox<String> statusFilter = new JComboBox<>();
 	private final JComboBox<String> typeFilter = new JComboBox<>();
 	private final JComboBox<String> sortFilter = new JComboBox<>();
@@ -108,20 +103,11 @@ public class FilterPanel extends JPanel
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
 
 		setupFilterDropdowns();
-		setupTiersSection();
 		setupFiltersSection();
 	}
 
 	private void setupFilterDropdowns()
 	{
-		tierFilter.addItem("All Tiers");
-		tierFilter.addItem("Easy");
-		tierFilter.addItem("Medium");
-		tierFilter.addItem("Hard");
-		tierFilter.addItem("Elite");
-		tierFilter.addItem("Master");
-		tierFilter.addItem("Grandmaster");
-
 		statusFilter.addItem("All");
 		statusFilter.addItem("Completed");
 		statusFilter.addItem("Incomplete");
@@ -147,81 +133,6 @@ public class FilterPanel extends JPanel
 		sortDirectionButton.setIcon(SORT_UP_ICON);
 	}
 
-	private void setupTiersSection()
-	{
-		tiersSection.setLayout(new BorderLayout());
-		tiersSection.setBorder(new EmptyBorder(0, 10, 5, 10));
-		tiersSection.setBackground(ColorScheme.DARK_GRAY_COLOR);
-
-		// Create custom toggle button panel
-		JPanel tiersTogglePanel = new JPanel(new BorderLayout());
-		tiersTogglePanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		tiersTogglePanel.setBorder(new LineBorder(ColorScheme.MEDIUM_GRAY_COLOR, 1));
-		tiersTogglePanel.setPreferredSize(new Dimension(0, 30));
-
-		JLabel tiersLabel = new JLabel("Tiers");
-		tiersLabel.setFont(FontManager.getRunescapeSmallFont());
-		tiersLabel.setForeground(Color.WHITE);
-		tiersLabel.setBorder(new EmptyBorder(6, 8, 6, 8));
-
-		JLabel tiersArrowLabel = new JLabel();
-		tiersArrowLabel.setBorder(new EmptyBorder(6, 8, 6, 8));
-		updateTiersArrow(tiersArrowLabel);
-
-		tiersTogglePanel.add(tiersLabel, BorderLayout.WEST);
-		tiersTogglePanel.add(tiersArrowLabel, BorderLayout.EAST);
-
-		// Make the whole panel clickable
-		tiersTogglePanel.addMouseListener(new java.awt.event.MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(java.awt.event.MouseEvent e)
-			{
-				toggleTiers();
-				updateTiersArrow(tiersArrowLabel);
-			}
-		});
-
-		tiersPanel.setLayout(new GridLayout(2, 3, 5, 5));
-		tiersPanel.setBorder(new EmptyBorder(8, 0, 0, 0));
-		tiersPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		tiersPanel.setVisible(tiersExpanded);
-
-		String[] tiers = {"Easy", "Medium", "Hard", "Elite", "Master", "Grandmaster"};
-		for (String tier : tiers)
-		{
-			JToggleButton tierButton = createTierButton(tier);
-			tiersPanel.add(tierButton);
-		}
-
-		tiersSection.add(tiersTogglePanel, BorderLayout.NORTH);
-		tiersSection.add(tiersPanel, BorderLayout.CENTER);
-	}
-
-	private void updateTiersArrow(JLabel arrowLabel)
-	{
-		arrowLabel.setIcon(tiersExpanded ? UP_ARROW : DOWN_ARROW);
-	}
-
-	private void updateTiersToggleButton()
-	{
-		if (tiersExpanded)
-		{
-			tiersToggleButton.setText("Tiers");
-			tiersToggleButton.setIcon(UP_ARROW);
-			tiersToggleButton.setHorizontalTextPosition(SwingConstants.LEFT);
-			tiersToggleButton.setHorizontalAlignment(SwingConstants.LEFT);
-			tiersToggleButton.setIconTextGap(100);
-		}
-		else
-		{
-			tiersToggleButton.setText("Tiers");
-			tiersToggleButton.setIcon(DOWN_ARROW);
-			tiersToggleButton.setHorizontalTextPosition(SwingConstants.LEFT);
-			tiersToggleButton.setHorizontalAlignment(SwingConstants.LEFT);
-			tiersToggleButton.setIconTextGap(100);
-		}
-	}
 
 	private JToggleButton createTierButton(String tier)
 	{
@@ -337,16 +248,21 @@ public class FilterPanel extends JPanel
 		gbc.weightx = 1.0;
 		gbc.gridx = 0;
 
+		// Add tiers toggle buttons
 		gbc.gridy = 0;
-		filtersPanel.add(createFilterRow("Tier", tierFilter), gbc);
+		filtersPanel.add(createTiersRow(), gbc);
 
+		// Add dividing line
 		gbc.gridy = 1;
-		filtersPanel.add(createFilterRow("Status", statusFilter), gbc);
+		filtersPanel.add(createDivider(), gbc);
 
 		gbc.gridy = 2;
-		filtersPanel.add(createFilterRow("Type", typeFilter), gbc);
+		filtersPanel.add(createFilterRow("Status", statusFilter), gbc);
 
 		gbc.gridy = 3;
+		filtersPanel.add(createFilterRow("Type", typeFilter), gbc);
+
+		gbc.gridy = 4;
 		filtersPanel.add(createSortRow(), gbc);
 
 		filtersSection.add(filtersTogglePanel, BorderLayout.NORTH);
@@ -394,6 +310,36 @@ public class FilterPanel extends JPanel
 		return row;
 	}
 
+	private JPanel createTiersRow()
+	{
+		JPanel tiersPanel = new JPanel(new GridLayout(2, 3, 5, 5));
+		tiersPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		tiersPanel.setBorder(new EmptyBorder(0, 0, 8, 0));
+
+		String[] tiers = {"Easy", "Medium", "Hard", "Elite", "Master", "Grandmaster"};
+		for (String tier : tiers)
+		{
+			JToggleButton tierButton = createTierButton(tier);
+			tiersPanel.add(tierButton);
+		}
+
+		return tiersPanel;
+	}
+
+	private JPanel createDivider()
+	{
+		JPanel dividerContainer = new JPanel(new BorderLayout());
+		dividerContainer.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		dividerContainer.setBorder(new EmptyBorder(0, 0, 8, 0));
+
+		JPanel divider = new JPanel();
+		divider.setBackground(ColorScheme.MEDIUM_GRAY_COLOR);
+		divider.setPreferredSize(new Dimension(0, 1));
+
+		dividerContainer.add(divider, BorderLayout.CENTER);
+		return dividerContainer;
+	}
+
 	private JPanel createSortRow()
 	{
 		JPanel row = new JPanel(new BorderLayout(5, 0));
@@ -411,34 +357,22 @@ public class FilterPanel extends JPanel
 
 		row.add(label, BorderLayout.WEST);
 		row.add(sortControls, BorderLayout.CENTER);
-
 		return row;
 	}
 
 	private void layoutComponents()
 	{
-		add(tiersSection);
 		add(filtersSection);
 	}
 
 	private void setupEventHandlers()
 	{
-		tiersToggleButton.addActionListener(e -> toggleTiers());
 		filtersToggleButton.addActionListener(e -> toggleFilters());
 		sortDirectionButton.addActionListener(e -> toggleSortDirection());
 
-		tierFilter.addActionListener(e -> triggerRefresh());
 		statusFilter.addActionListener(e -> triggerRefresh());
 		typeFilter.addActionListener(e -> triggerRefresh());
 		sortFilter.addActionListener(e -> triggerRefresh());
-	}
-
-	private void toggleTiers()
-	{
-		tiersExpanded = !tiersExpanded;
-		tiersPanel.setVisible(tiersExpanded);
-		revalidate();
-		repaint();
 	}
 
 	private void toggleFilters()
@@ -468,11 +402,6 @@ public class FilterPanel extends JPanel
 	public Map<String, Boolean> getSelectedTiers()
 	{
 		return selectedTiers;
-	}
-
-	public String getSelectedTierFilter()
-	{
-		return (String) tierFilter.getSelectedItem();
 	}
 
 	public String getSelectedStatusFilter()
