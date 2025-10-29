@@ -857,4 +857,21 @@ public class CombatAchievementsPanel extends PluginPanel
 			repaint();
 		});
 	}
+
+	public void openInBossesTab(String bossName)
+	{
+		SwingUtilities.invokeLater(() -> {
+			// Switch to bosses view
+			currentViewMode = ViewMode.BOSSES;
+			selectedBoss = bossName;
+
+			// Update tab button styling
+			styleTabButton(allTasksButton, false);
+			styleTabButton(trackedTasksButton, false);
+			styleTabButton(bossesButton, true);
+
+			// Refresh content to show the boss achievements
+			refreshContent();
+		});
+	}
 }

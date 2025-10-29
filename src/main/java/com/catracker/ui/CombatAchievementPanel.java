@@ -239,6 +239,15 @@ public class CombatAchievementPanel extends JPanel
 		wikiItem.addActionListener(event -> openWikiLink());
 		popup.add(wikiItem);
 
+		// Add "Open in Bosses Tab" option if boss name is available
+		String bossName = achievement.getBossName();
+		if (bossName != null && !bossName.equals("Unknown") && !bossName.trim().isEmpty())
+		{
+			JMenuItem bossTabItem = new JMenuItem("Open in Bosses Tab");
+			bossTabItem.addActionListener(event -> plugin.getPanel().openInBossesTab(bossName));
+			popup.add(bossTabItem);
+		}
+
 		if (!achievement.isCompleted())
 		{
 			JMenuItem completeItem = new JMenuItem("Mark as Completed (Test)");
