@@ -83,7 +83,7 @@ public class StatsPanel extends JPanel
 
 			JPanel totalCard = createStatCard("Total Progress", totalPointsLabel, ColorScheme.BRAND_ORANGE, false);
 			JPanel trackedCard = createStatCard("Tracked Tasks", trackedPointsLabel, new Color(50, 150, 150), false);
-			JPanel goalCard = createStatCard("Goal Progress", goalLabel, new Color(120, 160, 80), false);
+			JPanel goalCard = createStatCard("Goal Progress", goalLabel, new Color(200, 120, 255), false);
 
 			add(totalCard);
 			add(trackedCard);
@@ -116,7 +116,7 @@ public class StatsPanel extends JPanel
 		compactPanel.add(trackedRow);
 
 		// Goal Progress Row
-		JPanel goalRow = createCompactRow(goalLabel, new Color(120, 160, 80));
+		JPanel goalRow = createCompactRow(goalLabel, new Color(200, 120, 255));
 		compactPanel.add(goalRow);
 
 		return compactPanel;
@@ -150,7 +150,7 @@ public class StatsPanel extends JPanel
 		trackedPointsLabel.setForeground(Color.CYAN);
 
 		goalLabel.setFont(FontManager.getRunescapeSmallFont());
-		goalLabel.setForeground(Color.GREEN);
+		goalLabel.setForeground(new Color(200, 120, 255));
 	}
 
 	private JPanel createStatCard(String title, JLabel valueLabel, Color accentColor, boolean compactMode)
@@ -180,6 +180,7 @@ public class StatsPanel extends JPanel
 
 		valueLabel.setHorizontalAlignment(SwingConstants.LEFT);
 		valueLabel.setFont(FontManager.getRunescapeSmallFont());
+		valueLabel.setBorder(null);
 
 		JPanel accentLine = new JPanel();
 		accentLine.setBackground(accentColor);
@@ -211,12 +212,7 @@ public class StatsPanel extends JPanel
 			.mapToInt(CombatAchievement::getPoints)
 			.sum();
 
-		int totalPoints = visibleAchievements.stream()
-			.mapToInt(CombatAchievement::getPoints)
-			.sum();
-
-		int completedPoints = visibleAchievements.stream()
-			.filter(CombatAchievement::isCompleted)
+		int allTotalPoints = allAchievements.stream()
 			.mapToInt(CombatAchievement::getPoints)
 			.sum();
 
@@ -233,20 +229,37 @@ public class StatsPanel extends JPanel
 		int pointGoal = TierUtil.getPointsFromGoal(tierGoal, totalCompletedPoints);
 		String actualTierName = TierUtil.getActualTierName(tierGoal, totalCompletedPoints);
 
-		totalPointsLabel.setText("Total: " + completedPoints + "/" + totalPoints + " pts" +
-			" (" + visibleAchievements.size() + " " + viewContext + ")");
+		boolean compactMode = plugin.getConfig().preferSmallerStatsPanel();
 
-		trackedPointsLabel.setText("Tracked: " + completedTrackedPoints + "/" +
-			totalTrackedPoints + " pts (" + trackedAchievements.size() + " tasks)");
+		if (compactMode)
+		{
+			totalPointsLabel.setText("Total: " + totalCompletedPoints + "/" + allTotalPoints + " pts" +
+				" (" + allAchievements.size() + " tasks)");
+
+			trackedPointsLabel.setText("Tracked: " + completedTrackedPoints + "/" +
+				totalTrackedPoints + " pts (" + trackedAchievements.size() + " tasks)");
+		}
+		else
+		{
+			totalPointsLabel.setText(totalCompletedPoints + "/" + allTotalPoints + " pts" +
+				" (" + allAchievements.size() + " tasks)");
+
+			trackedPointsLabel.setText(completedTrackedPoints + "/" +
+				totalTrackedPoints + " pts (" + trackedAchievements.size() + " tasks)");
+		}
 
 		if (totalCompletedPoints >= pointGoal)
 		{
-			goalLabel.setText("Goal: " + actualTierName + " Completed! (" + totalCompletedPoints + " pts)");
+			String goalText = compactMode ? "Goal: " + actualTierName + " Completed! (" + totalCompletedPoints + " pts)" :
+				actualTierName + " Completed! (" + totalCompletedPoints + " pts)";
+			goalLabel.setText(goalText);
 		}
 		else
 		{
 			int remainingPoints = pointGoal - totalCompletedPoints;
-			goalLabel.setText("Goal: " + remainingPoints + " pts to " + actualTierName);
+			String goalText = compactMode ? "Goal: " + remainingPoints + " pts to " + actualTierName :
+				remainingPoints + " pts to " + actualTierName;
+			goalLabel.setText(goalText);
 		}
 	}
 
@@ -263,7 +276,16 @@ public class StatsPanel extends JPanel
 			.filter(stats -> stats.completed == stats.total && stats.total > 0)
 			.count();
 
-		totalPointsLabel.setText("Bosses: " + completedBosses + "/" + totalBosses + " complete");
+		boolean compactMode = plugin.getConfig().preferSmallerStatsPanel();
+
+		if (compactMode)
+		{
+			totalPointsLabel.setText("Bosses: " + completedBosses + "/" + totalBosses + " complete");
+		}
+		else
+		{
+			totalPointsLabel.setText(completedBosses + "/" + totalBosses + " complete");
+		}
 
 		int totalTrackedPoints = trackedAchievements.stream()
 			.mapToInt(CombatAchievement::getPoints)
@@ -274,8 +296,16 @@ public class StatsPanel extends JPanel
 			.mapToInt(CombatAchievement::getPoints)
 			.sum();
 
-		trackedPointsLabel.setText("Tracked: " + completedTrackedPoints + "/" +
-			totalTrackedPoints + " pts (" + trackedAchievements.size() + " tasks)");
+		if (compactMode)
+		{
+			trackedPointsLabel.setText("Tracked: " + completedTrackedPoints + "/" +
+				totalTrackedPoints + " pts (" + trackedAchievements.size() + " tasks)");
+		}
+		else
+		{
+			trackedPointsLabel.setText(completedTrackedPoints + "/" +
+				totalTrackedPoints + " pts (" + trackedAchievements.size() + " tasks)");
+		}
 
 		int totalCompletedPoints = allAchievements.stream()
 			.filter(CombatAchievement::isCompleted)
@@ -288,12 +318,16 @@ public class StatsPanel extends JPanel
 
 		if (totalCompletedPoints >= pointGoal)
 		{
-			goalLabel.setText("Goal: " + actualTierName + " Completed! (" + totalCompletedPoints + " pts)");
+			String goalText = compactMode ? "Goal: " + actualTierName + " Completed! (" + totalCompletedPoints + " pts)" :
+				actualTierName + " Completed! (" + totalCompletedPoints + " pts)";
+			goalLabel.setText(goalText);
 		}
 		else
 		{
 			int remainingPoints = pointGoal - totalCompletedPoints;
-			goalLabel.setText("Goal: " + remainingPoints + " pts to " + actualTierName);
+			String goalText = compactMode ? "Goal: " + remainingPoints + " pts to " + actualTierName :
+				remainingPoints + " pts to " + actualTierName;
+			goalLabel.setText(goalText);
 		}
 	}
 }
