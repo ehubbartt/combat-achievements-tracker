@@ -82,7 +82,7 @@ public class StatsPanel extends JPanel
 			setupStatsLabels();
 
 			JPanel totalCard = createStatCard("Total Progress", totalPointsLabel, ColorScheme.BRAND_ORANGE, false);
-			JPanel trackedCard = createStatCard("Tracked Tasks", trackedPointsLabel, new Color(50, 150, 150), false);
+			JPanel trackedCard = createStatCard("Tracked Tasks", trackedPointsLabel, new Color(100, 149, 237), false);
 			JPanel goalCard = createStatCard("Goal Progress", goalLabel, new Color(200, 120, 255), false);
 
 			add(totalCard);
@@ -112,7 +112,7 @@ public class StatsPanel extends JPanel
 		compactPanel.add(totalRow);
 
 		// Tracked Tasks Row
-		JPanel trackedRow = createCompactRow(trackedPointsLabel, new Color(50, 150, 150));
+		JPanel trackedRow = createCompactRow(trackedPointsLabel, new Color(100, 149, 237));
 		compactPanel.add(trackedRow);
 
 		// Goal Progress Row
@@ -147,7 +147,7 @@ public class StatsPanel extends JPanel
 		totalPointsLabel.setForeground(Color.WHITE);
 
 		trackedPointsLabel.setFont(FontManager.getRunescapeSmallFont());
-		trackedPointsLabel.setForeground(Color.CYAN);
+		trackedPointsLabel.setForeground(new Color(100, 149, 237));
 
 		goalLabel.setFont(FontManager.getRunescapeSmallFont());
 		goalLabel.setForeground(new Color(200, 120, 255));
