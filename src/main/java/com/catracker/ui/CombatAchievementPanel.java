@@ -48,7 +48,7 @@ public class CombatAchievementPanel extends JPanel
 	private final JPanel container = new JPanel(new BorderLayout());
 	private final JPanel body = new JPanel(new BorderLayout());
 	private final JLabel nameLabel = new JLabel();
-	private final JLabel descriptionLabel = new JLabel();
+	private final JTextArea descriptionArea = new JTextArea();
 	private final JToggleButton trackButton = new JToggleButton();
 	private final JLabel tierIconLabel = new JLabel();
 
@@ -124,11 +124,24 @@ public class CombatAchievementPanel extends JPanel
 			centerPanel.add(bossTypeLabel);
 		}
 
-		descriptionLabel.setFont(FontManager.getRunescapeSmallFont());
-		descriptionLabel.setForeground(Color.LIGHT_GRAY);
-		descriptionLabel.setText(achievement.getDescription());
-		descriptionLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		centerPanel.add(descriptionLabel);
+		// Create a custom panel to hold the description with ellipsis handling
+		JPanel descriptionPanel = new JPanel(new BorderLayout());
+		descriptionPanel.setBackground(getBackgroundColor());
+		descriptionPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+		JTextArea descLabel = new JTextArea();
+		descLabel.setFont(FontManager.getRunescapeSmallFont());
+		descLabel.setForeground(Color.LIGHT_GRAY);
+		descLabel.setBackground(getBackgroundColor());
+		descLabel.setText(truncateToTwoLines(achievement.getDescription()));
+		descLabel.setLineWrap(true);
+		descLabel.setWrapStyleWord(true);
+		descLabel.setEditable(false);
+		descLabel.setFocusable(false);
+		descLabel.setBorder(null);
+
+		descriptionPanel.add(descLabel, BorderLayout.CENTER);
+		centerPanel.add(descriptionPanel);
 
 		body.add(topSection, BorderLayout.NORTH);
 		body.add(centerPanel, BorderLayout.CENTER);
@@ -136,7 +149,29 @@ public class CombatAchievementPanel extends JPanel
 		container.add(body, BorderLayout.CENTER);
 		add(container, BorderLayout.CENTER);
 
-		setToolTipText(createTooltip());
+		// Tooltip disabled temporarily
+		// setToolTipText(createTooltip());
+	}
+
+	private String truncateToTwoLines(String text)
+	{
+		if (text == null || text.isEmpty())
+		{
+			return "";
+		}
+
+		// Calculate approximate character limit for 2 lines
+		// Average panel width is ~230px, average char width is ~7px
+		// So roughly 33 chars per line * 2 lines = 66 chars
+		int maxChars = 66;
+
+		if (text.length() <= maxChars)
+		{
+			return text;
+		}
+
+		// Truncate and add ellipsis
+		return text.substring(0, maxChars - 3) + "...";
 	}
 
 	private String getBossTypeText()
@@ -233,13 +268,15 @@ public class CombatAchievementPanel extends JPanel
 			@Override
 			public void mouseEntered(MouseEvent e)
 			{
-				setToolTipText(createTooltip());
+				// Tooltip disabled temporarily
+				// setToolTipText(createTooltip());
 			}
 
 			@Override
 			public void mouseExited(MouseEvent e)
 			{
-				setToolTipText(null);
+				// Tooltip disabled temporarily
+				// setToolTipText(null);
 			}
 		});
 	}
