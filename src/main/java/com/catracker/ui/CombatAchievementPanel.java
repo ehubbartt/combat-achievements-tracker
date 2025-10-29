@@ -37,7 +37,6 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import javax.swing.Timer;
 
 @Slf4j
 public class CombatAchievementPanel extends JPanel
@@ -51,6 +50,8 @@ public class CombatAchievementPanel extends JPanel
 	private final JTextArea descriptionArea = new JTextArea();
 	private final JToggleButton trackButton = new JToggleButton();
 	private final JLabel tierIconLabel = new JLabel();
+	private final JPanel expandedPanel = new JPanel();
+	private boolean isExpanded = false;
 
 	private final JPanel topSection = new JPanel(new BorderLayout());
 	private final JPanel nameLabelPanel = new JPanel(new BorderLayout());
@@ -129,28 +130,156 @@ public class CombatAchievementPanel extends JPanel
 		descriptionPanel.setBackground(getBackgroundColor());
 		descriptionPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-		JTextArea descLabel = new JTextArea();
-		descLabel.setFont(FontManager.getRunescapeSmallFont());
-		descLabel.setForeground(Color.LIGHT_GRAY);
-		descLabel.setBackground(getBackgroundColor());
-		descLabel.setText(truncateToTwoLines(achievement.getDescription()));
-		descLabel.setLineWrap(true);
-		descLabel.setWrapStyleWord(true);
-		descLabel.setEditable(false);
-		descLabel.setFocusable(false);
-		descLabel.setBorder(null);
+		descriptionArea.setFont(FontManager.getRunescapeSmallFont());
+		descriptionArea.setForeground(Color.LIGHT_GRAY);
+		descriptionArea.setBackground(getBackgroundColor());
+		descriptionArea.setText(truncateToTwoLines(achievement.getDescription()));
+		descriptionArea.setLineWrap(true);
+		descriptionArea.setWrapStyleWord(true);
+		descriptionArea.setEditable(false);
+		descriptionArea.setFocusable(false);
+		descriptionArea.setEnabled(false);
+		descriptionArea.setDisabledTextColor(Color.LIGHT_GRAY);
+		descriptionArea.setBorder(null);
+		descriptionArea.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-		descriptionPanel.add(descLabel, BorderLayout.CENTER);
+		descriptionPanel.add(descriptionArea, BorderLayout.CENTER);
 		centerPanel.add(descriptionPanel);
 
 		body.add(topSection, BorderLayout.NORTH);
 		body.add(centerPanel, BorderLayout.CENTER);
 
+		// Create expanded details panel (initially hidden)
+		setupExpandedPanel();
+
+		// Make the container clickable with hover effect
+		container.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+		MouseAdapter clickAndHoverHandler = new MouseAdapter()
+		{
+			@Override
+			public void mousePressed(MouseEvent e)
+			{
+				// Check if click originated from track button - if so, ignore
+				Component source = (Component) e.getSource();
+				if (source == trackButton || SwingUtilities.isDescendingFrom(source, trackButton))
+				{
+					return;
+				}
+				toggleExpanded();
+			}
+
+			@Override
+			public void mouseEntered(MouseEvent e)
+			{
+				updateAllBackgrounds(ColorScheme.DARK_GRAY_HOVER_COLOR);
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e)
+			{
+				updateAllBackgrounds(getBackgroundColor());
+			}
+		};
+
+		// Add listener to container and all its children recursively
+		addMouseListenerRecursively(container, clickAndHoverHandler);
+
+		// Explicitly add listener to description area to ensure it responds to clicks
+		descriptionArea.addMouseListener(clickAndHoverHandler);
+
 		container.add(body, BorderLayout.CENTER);
+		container.add(expandedPanel, BorderLayout.SOUTH);
 		add(container, BorderLayout.CENTER);
 
 		// Tooltip disabled temporarily
 		// setToolTipText(createTooltip());
+	}
+
+	private void setupExpandedPanel()
+	{
+		expandedPanel.setLayout(new BorderLayout());
+		expandedPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		expandedPanel.setVisible(false);
+
+		// Content panel for info
+		JPanel contentPanel = new JPanel();
+		contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+		contentPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		contentPanel.setBorder(new EmptyBorder(5, 6, 5, 6));
+
+		// Info rows (no description)
+		contentPanel.add(createInfoRow("Tier:", achievement.getTier()));
+		contentPanel.add(createInfoRow("Points:", String.valueOf(achievement.getPoints())));
+
+		if (achievement.getBossName() != null && !achievement.getBossName().equals("Unknown"))
+		{
+			contentPanel.add(createInfoRow("Boss:", achievement.getBossName()));
+		}
+
+		if (achievement.getType() != null && !achievement.getType().isEmpty())
+		{
+			contentPanel.add(createInfoRow("Type:", achievement.getType()));
+		}
+
+		if (achievement.getCompletionPercentage() != null)
+		{
+			String completionText = String.format("%.1f%%", achievement.getCompletionPercentage());
+			contentPanel.add(createInfoRow("Wiki Completion%:", completionText));
+		}
+		else
+		{
+			contentPanel.add(createInfoRow("Wiki Completion%:", "Unknown"));
+		}
+
+		contentPanel.add(Box.createVerticalStrut(5));
+
+		// Status
+		JLabel statusLabel = new JLabel();
+		statusLabel.setFont(FontManager.getRunescapeSmallFont());
+		statusLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		if (achievement.isCompleted())
+		{
+			statusLabel.setText("Status: Completed");
+			statusLabel.setForeground(Color.GREEN);
+		}
+		else
+		{
+			statusLabel.setText("Status: Incomplete");
+			statusLabel.setForeground(Color.RED);
+		}
+		contentPanel.add(statusLabel);
+
+		if (achievement.isTracked())
+		{
+			JLabel trackedLabel = new JLabel("Tracked");
+			trackedLabel.setFont(FontManager.getRunescapeSmallFont());
+			trackedLabel.setForeground(new Color(100, 149, 237));
+			trackedLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+			contentPanel.add(trackedLabel);
+		}
+
+		expandedPanel.add(contentPanel, BorderLayout.CENTER);
+	}
+
+	private JPanel createInfoRow(String label, String value)
+	{
+		JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+		row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		row.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+		JLabel labelComponent = new JLabel(label + " ");
+		labelComponent.setFont(FontManager.getRunescapeSmallFont());
+		labelComponent.setForeground(Color.LIGHT_GRAY);
+
+		JLabel valueComponent = new JLabel(value);
+		valueComponent.setFont(FontManager.getRunescapeSmallFont());
+		valueComponent.setForeground(Color.WHITE);
+
+		row.add(labelComponent);
+		row.add(valueComponent);
+
+		return row;
 	}
 
 	private String truncateToTwoLines(String text)
@@ -373,24 +502,74 @@ public class CombatAchievementPanel extends JPanel
 		return ColorScheme.DARKER_GRAY_COLOR;
 	}
 
-	private void updateAllBackgrounds()
+	private void updateAllBackgrounds(Color bgColor)
 	{
-		Color bgColor = getBackgroundColor();
-
 		container.setBackground(bgColor);
 		body.setBackground(bgColor);
 		topSection.setBackground(bgColor);
 		nameLabelPanel.setBackground(bgColor);
 		topRightPanel.setBackground(bgColor);
+		descriptionArea.setBackground(bgColor);
 
-		Component[] components = nameLabelPanel.getComponents();
-		for (Component comp : components)
+		// Update all nested panels
+		updateComponentBackgrounds(body, bgColor);
+		updateComponentBackgrounds(expandedPanel, bgColor);
+	}
+
+	private void updateComponentBackgrounds(Container parent, Color bgColor)
+	{
+		for (Component comp : parent.getComponents())
 		{
 			if (comp instanceof JPanel)
 			{
 				comp.setBackground(bgColor);
+				if (comp instanceof Container)
+				{
+					updateComponentBackgrounds((Container) comp, bgColor);
+				}
+			}
+			else if (comp instanceof JTextArea)
+			{
+				comp.setBackground(bgColor);
 			}
 		}
+	}
+
+	private void addMouseListenerRecursively(Container parent, MouseAdapter listener)
+	{
+		parent.addMouseListener(listener);
+		for (Component comp : parent.getComponents())
+		{
+			// Don't add listener to track button
+			if (comp == trackButton)
+			{
+				continue;
+			}
+			comp.addMouseListener(listener);
+			if (comp instanceof Container)
+			{
+				addMouseListenerRecursively((Container) comp, listener);
+			}
+		}
+	}
+
+	private void toggleExpanded()
+	{
+		isExpanded = !isExpanded;
+		expandedPanel.setVisible(isExpanded);
+
+		// Update description to show full text when expanded, truncated when collapsed
+		if (isExpanded)
+		{
+			descriptionArea.setText(achievement.getDescription());
+		}
+		else
+		{
+			descriptionArea.setText(truncateToTwoLines(achievement.getDescription()));
+		}
+
+		revalidate();
+		repaint();
 	}
 
 	private String createTooltip()
@@ -443,7 +622,7 @@ public class CombatAchievementPanel extends JPanel
 			nameLabel.setForeground(getNameColor());
 
 			setupTierIcon();
-			updateAllBackgrounds();
+			updateAllBackgrounds(getBackgroundColor());
 			updateTrackButton();
 			// Don't set tooltip immediately, let hover handle it
 			revalidate();
