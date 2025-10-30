@@ -125,7 +125,6 @@ public class CombatAchievementPanel extends JPanel
 			centerPanel.add(bossTypeLabel);
 		}
 
-		// Create a custom panel to hold the description with ellipsis handling
 		JPanel descriptionPanel = new JPanel(new BorderLayout());
 		descriptionPanel.setBackground(getBackgroundColor());
 		descriptionPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -149,10 +148,8 @@ public class CombatAchievementPanel extends JPanel
 		body.add(topSection, BorderLayout.NORTH);
 		body.add(centerPanel, BorderLayout.CENTER);
 
-		// Create expanded details panel (initially hidden)
 		setupExpandedPanel();
 
-		// Make the container clickable with hover effect
 		container.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
 		MouseAdapter clickAndHoverHandler = new MouseAdapter()
@@ -185,7 +182,6 @@ public class CombatAchievementPanel extends JPanel
 			@Override
 			public void mouseReleased(MouseEvent e)
 			{
-				// Check for popup trigger on release (for some platforms)
 				if (e.isPopupTrigger())
 				{
 					showContextMenu(e);
@@ -205,10 +201,8 @@ public class CombatAchievementPanel extends JPanel
 			}
 		};
 
-		// Add listener to container and all its children recursively
 		addMouseListenerRecursively(container, clickAndHoverHandler);
 
-		// Explicitly add listener to description area to ensure it responds to clicks
 		descriptionArea.addMouseListener(clickAndHoverHandler);
 
 		container.add(body, BorderLayout.CENTER);
@@ -225,13 +219,11 @@ public class CombatAchievementPanel extends JPanel
 		expandedPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		expandedPanel.setVisible(false);
 
-		// Content panel for info
 		JPanel contentPanel = new JPanel();
 		contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
 		contentPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		contentPanel.setBorder(new EmptyBorder(5, 6, 5, 6));
 
-		// Info rows (no description)
 		contentPanel.add(createInfoRow("Tier:", achievement.getTier()));
 		contentPanel.add(createInfoRow("Points:", String.valueOf(achievement.getPoints())));
 
@@ -441,12 +433,10 @@ public class CombatAchievementPanel extends JPanel
 		wikiItem.addActionListener(event -> openWikiLink());
 		popup.add(wikiItem);
 
-		// Add "Show More Info" option
 		JMenuItem moreInfoItem = new JMenuItem("Show More Info");
 		moreInfoItem.addActionListener(event -> plugin.getPanel().showAchievementDetail(achievement));
 		popup.add(moreInfoItem);
 
-		// Add "Open in Bosses Tab" option if boss name is available
 		String bossName = achievement.getBossName();
 		if (bossName != null && !bossName.equals("Unknown") && !bossName.trim().isEmpty())
 		{
@@ -566,7 +556,6 @@ public class CombatAchievementPanel extends JPanel
 		parent.addMouseListener(listener);
 		for (Component comp : parent.getComponents())
 		{
-			// Don't add listener to track button
 			if (comp == trackButton)
 			{
 				continue;
@@ -584,7 +573,6 @@ public class CombatAchievementPanel extends JPanel
 		isExpanded = !isExpanded;
 		expandedPanel.setVisible(isExpanded);
 
-		// Update description to show full text when expanded, truncated when collapsed
 		if (isExpanded)
 		{
 			descriptionArea.setText(achievement.getDescription());
@@ -650,7 +638,6 @@ public class CombatAchievementPanel extends JPanel
 			setupTierIcon();
 			updateAllBackgrounds(getBackgroundColor());
 			updateTrackButton();
-			// Don't set tooltip immediately, let hover handle it
 			revalidate();
 			repaint();
 		});

@@ -1053,7 +1053,6 @@ public class CombatAchievementsPanel extends PluginPanel
 			currentViewMode = ViewMode.BOSSES;
 			selectedBoss = bossName;
 
-			// Update tab button styling
 			styleTabButton(allTasksButton, false);
 			styleTabButton(trackedTasksButton, false);
 			styleTabButton(bossesButton, true);
