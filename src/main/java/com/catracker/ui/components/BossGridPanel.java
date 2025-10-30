@@ -174,11 +174,27 @@ public class BossGridPanel extends JPanel
 		card.addMouseListener(new MouseAdapter()
 		{
 			@Override
-			public void mouseClicked(MouseEvent e)
+			public void mousePressed(MouseEvent e)
 			{
-				if (bossClickCallback != null)
+				if (e.isPopupTrigger())
 				{
-					bossClickCallback.accept(bossName);
+					showContextMenu(e, bossName);
+				}
+				else if (SwingUtilities.isLeftMouseButton(e))
+				{
+					if (bossClickCallback != null)
+					{
+						bossClickCallback.accept(bossName);
+					}
+				}
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent e)
+			{
+				if (e.isPopupTrigger())
+				{
+					showContextMenu(e, bossName);
 				}
 			}
 
@@ -198,6 +214,31 @@ public class BossGridPanel extends JPanel
 		});
 
 		return card;
+	}
+
+	private void showContextMenu(MouseEvent e, String bossName)
+	{
+		JPopupMenu popup = new JPopupMenu();
+
+		JMenuItem wikiItem = new JMenuItem("Open Wiki");
+		wikiItem.addActionListener(event -> openBossWiki(bossName));
+		popup.add(wikiItem);
+
+		popup.show(e.getComponent(), e.getX(), e.getY());
+	}
+
+	private void openBossWiki(String bossName)
+	{
+		try
+		{
+			String wikiUrl = "https://oldschool.runescape.wiki/w/Special:Search?search=" +
+				java.net.URLEncoder.encode(bossName, "UTF-8");
+			net.runelite.client.util.LinkBrowser.browse(wikiUrl);
+		}
+		catch (Exception ex)
+		{
+			// Log error if needed
+		}
 	}
 
 	private Map<String, BossStats> calculateBossStats(List<CombatAchievement> allAchievements)
