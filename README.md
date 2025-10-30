@@ -2,23 +2,29 @@
 
 A RuneLite plugin for tracking and managing Old School RuneScape Combat Achievements with advanced filtering, sorting, and progress tracking capabilities.
 
-![Plugin Overview Screenshot](readme/overview.png)
-
 ## Features
 
 ### Progress Tracking
 - **Real-time Statistics**: View your total completion progress, tracked tasks, and goal progress
 - **Tier-based Goals**: Set automatic or manual tier goals (Easy through Grandmaster)
 - **Points Tracking**: Monitor points earned and remaining for your current goal
+- **Expand**: Left-click on any task to expand it for more info
 
-![Statistics Panel Screenshot](readme/stats.png)
+![Statistics Panel Screenshot](readme/overview.png)
 
 ### Task Management
 - **Track Important Tasks**: Mark achievements you're actively working on
 - **Multiple Views**: Switch between All Tasks, Tracked Tasks, and Boss-specific views
-- **Quick Actions**: Right-click for wiki links and task management options
+- **Quick Actions**: Right-click for wiki links and to find more info on a task
 
 ![Task Tracking Screenshot](readme/tracked.png)
+
+### Boss Overview
+- **Boss Grid View**: Visual overview of completion status for all bosses
+- **Progress Indicators**: See at-a-glance completion rates for each boss
+- **Boss-Specific Tasks**: Click any boss to view their specific achievements
+
+![Boss Grid Screenshot](readme/bosses.png)
 
 ### Advanced Filtering
 - **Tier Filtering**: Toggle visibility for specific achievement tiers
@@ -28,13 +34,11 @@ A RuneLite plugin for tracking and managing Old School RuneScape Combat Achievem
 
 ![Filtering Options Screenshot](readme/filters.png)
 
-### Boss Overview
-- **Boss Grid View**: Visual overview of completion status for all bosses
-- **Progress Indicators**: See at-a-glance completion rates for each boss
-- **Boss-Specific Tasks**: Click any boss to view their specific achievements
+### Small Client Settings
+- **Config**: Go to the plugin settings and turn on "Prefer Smaller Stats Panel"
 
-![Boss Grid Screenshot](readme/bosses.png)
-
+![Config Screenshot](readme/config.png)
+![Small Stats Screenshot](readme/small-stats.png)
 
 ## Usage
 
@@ -66,6 +70,7 @@ Access plugin settings through RuneLite's configuration panel:
 - **Tier Goal**: Set your current achievement goal
 - **Notifications**: Toggle completion notifications
 - **Chat Messages**: Enable/disable progress messages in chat
+- **Small client**: Enable/disable small client mode
 
 ## Features Overview
 
