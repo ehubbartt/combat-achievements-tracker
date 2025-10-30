@@ -181,7 +181,7 @@ public class CombatAchievementsPlugin extends Plugin
 		}
 	}
 
-	private void handleCombatAchievementCompletion(String message)
+	public void handleCombatAchievementCompletion(String message)
 	{
 		log.debug("Combat achievement completed: {}", message);
 
@@ -189,18 +189,19 @@ public class CombatAchievementsPlugin extends Plugin
 		{
 			if (panel != null)
 			{
-				panel.onAchievementCompleted(message);
-
-				if (config.showGoalProgress())
+				// Always refresh data when achievement is completed to update UI
+				dataLoader.requestManualRefresh(achievements ->
 				{
-					dataLoader.requestManualRefresh(achievements ->
+					SwingUtilities.invokeLater(() ->
 					{
-						SwingUtilities.invokeLater(() ->
+						panel.onAchievementCompleted(message);
+
+						if (config.showGoalProgress())
 						{
 							chatMessageUtil.sendProgressMessage(achievements, getTierGoal());
-						});
+						}
 					});
-				}
+				});
 			}
 		});
 	}

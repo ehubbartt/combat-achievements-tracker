@@ -455,15 +455,18 @@ public class CombatAchievementPanel extends JPanel
 			popup.add(bossTabItem);
 		}
 
-		if (!achievement.isCompleted())
-		{
-			JMenuItem completeItem = new JMenuItem("Mark as Completed (Test)");
-			completeItem.addActionListener(event ->
-			{
-				achievement.markCompleted();
-				refresh();
-			});
-		}
+//		if (!achievement.isCompleted())
+//		{
+//			JMenuItem completeItem = new JMenuItem("Mark as Completed (Test)");
+//			completeItem.addActionListener(event ->
+//			{
+//				// Simulate the actual game completion flow by calling the plugin's handler
+//				// This will trigger data refresh and UI update just like a real completion
+//				String testMessage = "Congratulations, you've completed a master combat task: " + achievement.getName() + ".";
+//				plugin.handleCombatAchievementCompletion(testMessage);
+//			});
+//			popup.add(completeItem);
+//		}
 
 		popup.show(e.getComponent(), e.getX(), e.getY());
 	}

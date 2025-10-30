@@ -124,7 +124,7 @@ public class FilterPanel extends JPanel
 		sortFilter.addItem("Tier");
 		sortFilter.addItem("Name");
 		sortFilter.addItem("Completion");
-		sortFilter.addItem("Completion %");
+		sortFilter.addItem("Wiki Completion %");
 
 		sortDirectionButton.setPreferredSize(new Dimension(25, 20));
 		sortDirectionButton.setBackground(ColorScheme.DARKER_GRAY_COLOR);

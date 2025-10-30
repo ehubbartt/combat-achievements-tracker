@@ -898,6 +898,9 @@ public class CombatAchievementsPanel extends PluginPanel
 
 	public void loadTrackedAchievements()
 	{
+		// Clear tracked list first to avoid duplicates when reloading
+		trackedAchievements.clear();
+
 		try
 		{
 			String configJson = plugin.getConfigManager().getRSProfileConfiguration(
@@ -944,6 +947,8 @@ public class CombatAchievementsPanel extends PluginPanel
 	public void onAchievementCompleted(String message)
 	{
 		log.debug("Achievement completed notification: {}", message);
+		// Reload tracked achievements to sync with updated allAchievements data
+		loadTrackedAchievements();
 		refreshContent();
 	}
 
