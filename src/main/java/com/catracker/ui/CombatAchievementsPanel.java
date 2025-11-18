@@ -273,49 +273,30 @@ public class CombatAchievementsPanel extends PluginPanel
 
 	private void setupContentContainer()
 	{
-		// Setup all tasks container
-		allTasksContainer.setLayout(new BoxLayout(allTasksContainer, BoxLayout.Y_AXIS));
-		allTasksContainer.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		allTasksContainer.setBorder(new EmptyBorder(0, 10, 0, 10));
-		allTasksContainer.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-		allTasksScrollPane.setViewportView(allTasksContainer);
-		allTasksScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-		allTasksScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-		allTasksScrollPane.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		allTasksScrollPane.setBorder(null);
-		allTasksScrollPane.getVerticalScrollBar().setUnitIncrement(16);
-
-		// Setup tracked container
-		trackedContainer.setLayout(new BoxLayout(trackedContainer, BoxLayout.Y_AXIS));
-		trackedContainer.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		trackedContainer.setBorder(new EmptyBorder(0, 10, 0, 10));
-		trackedContainer.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-		trackedScrollPane.setViewportView(trackedContainer);
-		trackedScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-		trackedScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-		trackedScrollPane.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		trackedScrollPane.setBorder(null);
-		trackedScrollPane.getVerticalScrollBar().setUnitIncrement(16);
-
-		// Setup bosses container
-		bossesContainer.setLayout(new BoxLayout(bossesContainer, BoxLayout.Y_AXIS));
-		bossesContainer.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		bossesContainer.setBorder(new EmptyBorder(0, 10, 0, 10));
-		bossesContainer.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-		bossesScrollPane.setViewportView(bossesContainer);
-		bossesScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-		bossesScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-		bossesScrollPane.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		bossesScrollPane.setBorder(null);
-		bossesScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+		// Setup each tab's container and scroll pane
+		setupTabScrollPane(allTasksContainer, allTasksScrollPane);
+		setupTabScrollPane(trackedContainer, trackedScrollPane);
+		setupTabScrollPane(bossesContainer, bossesScrollPane);
 
 		// Add scroll panes to card panel
 		cardPanel.add(allTasksScrollPane, ViewMode.ALL_TASKS.name());
 		cardPanel.add(trackedScrollPane, ViewMode.TRACKED_TASKS.name());
 		cardPanel.add(bossesScrollPane, ViewMode.BOSSES.name());
+	}
+
+	private void setupTabScrollPane(JPanel container, JScrollPane scrollPane)
+	{
+		container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
+		container.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		container.setBorder(new EmptyBorder(0, 10, 0, 10));
+		container.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+		scrollPane.setViewportView(container);
+		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+		scrollPane.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		scrollPane.setBorder(null);
+		scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 	}
 
 	private void layoutComponents()
@@ -496,41 +477,31 @@ public class CombatAchievementsPanel extends PluginPanel
 				bossHeaderPanel.setVisible(false);
 			}
 
-			// Get the current container and scroll pane based on view mode
+			// Get the current container, scroll pane, and dirty state based on view mode
 			JPanel currentContainer;
 			JScrollPane currentScrollPane;
+			boolean isDirty;
 			switch (currentViewMode)
 			{
 				case ALL_TASKS:
 					currentContainer = allTasksContainer;
 					currentScrollPane = allTasksScrollPane;
+					isDirty = allTasksDirty;
 					break;
 				case TRACKED_TASKS:
 					currentContainer = trackedContainer;
 					currentScrollPane = trackedScrollPane;
+					isDirty = trackedDirty;
 					break;
 				case BOSSES:
 					currentContainer = bossesContainer;
 					currentScrollPane = bossesScrollPane;
+					isDirty = bossesDirty;
 					break;
 				default:
 					currentContainer = allTasksContainer;
 					currentScrollPane = allTasksScrollPane;
-			}
-
-			// Only rebuild if the tab is dirty
-			boolean isDirty = false;
-			switch (currentViewMode)
-			{
-				case ALL_TASKS:
 					isDirty = allTasksDirty;
-					break;
-				case TRACKED_TASKS:
-					isDirty = trackedDirty;
-					break;
-				case BOSSES:
-					isDirty = bossesDirty;
-					break;
 			}
 
 			if (isDirty || selectedAchievement != null)
