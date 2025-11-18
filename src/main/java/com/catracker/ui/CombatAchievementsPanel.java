@@ -257,8 +257,6 @@ public class CombatAchievementsPanel extends PluginPanel
 			{
 				selectedBoss = null;
 			}
-			// Mark bosses as dirty so it rebuilds, don't reset scroll
-			// (scroll restoration is handled in refreshContent)
 			bossesDirty = true;
 			refreshContent(false);
 		});
@@ -273,12 +271,10 @@ public class CombatAchievementsPanel extends PluginPanel
 
 	private void setupContentContainer()
 	{
-		// Setup each tab's container and scroll pane
 		setupTabScrollPane(allTasksContainer, allTasksScrollPane);
 		setupTabScrollPane(trackedContainer, trackedScrollPane);
 		setupTabScrollPane(bossesContainer, bossesScrollPane);
 
-		// Add scroll panes to card panel
 		cardPanel.add(allTasksScrollPane, ViewMode.ALL_TASKS.name());
 		cardPanel.add(trackedScrollPane, ViewMode.TRACKED_TASKS.name());
 		cardPanel.add(bossesScrollPane, ViewMode.BOSSES.name());
@@ -306,7 +302,6 @@ public class CombatAchievementsPanel extends PluginPanel
 		titleLabel.setForeground(Color.WHITE);
 		titleLabel.setBorder(new EmptyBorder(10, 10, 5, 10));
 
-		// Setup toggle button
 		togglePanelsButton.setIcon(HIDE_ICON);
 		togglePanelsButton.setFont(FontManager.getRunescapeSmallFont());
 		togglePanelsButton.setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -318,8 +313,6 @@ public class CombatAchievementsPanel extends PluginPanel
 		togglePanelsButton.setOpaque(false);
 		togglePanelsButton.setToolTipText("Hide stats and filters panels");
 		togglePanelsButton.addActionListener(e -> toggleStatsAndFilters());
-
-		// Add hover effect
 		togglePanelsButton.addMouseListener(new java.awt.event.MouseAdapter()
 		{
 			@Override
@@ -394,11 +387,9 @@ public class CombatAchievementsPanel extends PluginPanel
 		styleTabButton(trackedTasksButton, viewMode == ViewMode.TRACKED_TASKS);
 		styleTabButton(bossesButton, viewMode == ViewMode.BOSSES);
 
-		// Show the selected tab using CardLayout
 		CardLayout cl = (CardLayout) cardPanel.getLayout();
 		cl.show(cardPanel, viewMode.name());
 
-		// Only refresh if the tab content is dirty
 		boolean needsRefresh = false;
 		switch (viewMode)
 		{
@@ -415,22 +406,18 @@ public class CombatAchievementsPanel extends PluginPanel
 
 		if (needsRefresh)
 		{
-			// Reset scroll to top when first loading a tab's content
 			refreshContent(true);
 		}
 		else
 		{
-			// Still update stats even if content doesn't need refresh
 			updateStats();
 		}
 	}
 
 	private void selectBoss(String bossName)
 	{
-		// Save current scroll position before drilling into boss
 		bossGridScrollPosition = bossesScrollPane.getVerticalScrollBar().getValue();
 		selectedBoss = bossName;
-		// Mark bosses as dirty and reset scroll for the new boss view
 		bossesDirty = true;
 		refreshContent(true);
 	}
@@ -443,14 +430,12 @@ public class CombatAchievementsPanel extends PluginPanel
 			allAchievements.clear();
 			allAchievements.addAll(newAchievements);
 			loadTrackedAchievements();
-			// Rebuild all tabs with new data
 			buildAllTabs();
 		});
 	}
 
 	public void refreshContent()
 	{
-		// Mark all tabs as dirty and refresh current view
 		allTasksDirty = true;
 		trackedDirty = true;
 		bossesDirty = true;
@@ -461,7 +446,6 @@ public class CombatAchievementsPanel extends PluginPanel
 	{
 		SwingUtilities.invokeLater(() ->
 		{
-			// Update boss header visibility
 			if (selectedAchievement != null)
 			{
 				bossTitle.setText(selectedAchievement.getName());
@@ -477,7 +461,6 @@ public class CombatAchievementsPanel extends PluginPanel
 				bossHeaderPanel.setVisible(false);
 			}
 
-			// Get the current container, scroll pane, and dirty state based on view mode
 			JPanel currentContainer;
 			JScrollPane currentScrollPane;
 			boolean isDirty;
@@ -541,17 +524,15 @@ public class CombatAchievementsPanel extends PluginPanel
 				currentContainer.revalidate();
 				currentContainer.repaint();
 
-				// Set scroll position after revalidate using double invokeLater
-				// to ensure layout is fully complete
 				final JScrollPane scrollPane = currentScrollPane;
 				final boolean isReturningToBossGrid = (currentViewMode == ViewMode.BOSSES && selectedBoss == null && !resetScrollPosition);
 
+				// Double invokeLater ensures layout is fully complete before setting scroll
 				SwingUtilities.invokeLater(() ->
 					SwingUtilities.invokeLater(() ->
 					{
 						if (isReturningToBossGrid)
 						{
-							// Restore saved scroll position when returning to boss grid
 							scrollPane.getVerticalScrollBar().setValue(bossGridScrollPosition);
 						}
 						else if (resetScrollPosition)
@@ -570,7 +551,6 @@ public class CombatAchievementsPanel extends PluginPanel
 	{
 		SwingUtilities.invokeLater(() ->
 		{
-			// Build All Tasks tab
 			allTasksContainer.removeAll();
 			allTasksPanels.clear();
 			List<CombatAchievement> allFiltered = getFilteredAchievements(allAchievements);
@@ -579,7 +559,6 @@ public class CombatAchievementsPanel extends PluginPanel
 			allTasksContainer.repaint();
 			allTasksDirty = false;
 
-			// Build Tracked tab
 			trackedContainer.removeAll();
 			trackedPanels.clear();
 			List<CombatAchievement> trackedFiltered = getFilteredAchievements(trackedAchievements);
@@ -588,7 +567,6 @@ public class CombatAchievementsPanel extends PluginPanel
 			trackedContainer.repaint();
 			trackedDirty = false;
 
-			// Build Bosses tab
 			bossesContainer.removeAll();
 			bossesContainer.add(bossGridPanel);
 			String statusFilter = filterPanel.getSelectedStatusFilter();
@@ -603,7 +581,6 @@ public class CombatAchievementsPanel extends PluginPanel
 
 			updateStats();
 
-			// Set scroll positions after layout is complete
 			SwingUtilities.invokeLater(() ->
 			{
 				allTasksScrollPane.getVerticalScrollBar().setValue(0);
@@ -647,17 +624,14 @@ public class CombatAchievementsPanel extends PluginPanel
 			return;
 		}
 
-		// Create outer panel with BorderLayout to anchor content to top
 		JPanel outerPanel = new JPanel(new BorderLayout());
 		outerPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
-		// Create detail panel with achievement info
 		JPanel detailPanel = new JPanel();
 		detailPanel.setLayout(new BoxLayout(detailPanel, BoxLayout.Y_AXIS));
 		detailPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		detailPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
 
-		// Add tier icon and name
 		JPanel nameSection = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
 		nameSection.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		nameSection.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -678,7 +652,6 @@ public class CombatAchievementsPanel extends PluginPanel
 		detailPanel.add(nameSection);
 		detailPanel.add(Box.createVerticalStrut(5));
 
-		// Description
 		JTextArea descriptionArea = new JTextArea(selectedAchievement.getDescription());
 		descriptionArea.setFont(FontManager.getRunescapeSmallFont());
 		descriptionArea.setForeground(Color.LIGHT_GRAY);
@@ -691,7 +664,6 @@ public class CombatAchievementsPanel extends PluginPanel
 		descriptionArea.setBorder(new EmptyBorder(0, 0, 3, 0));
 		detailPanel.add(descriptionArea);
 
-		// Info rows
 		detailPanel.add(createInfoRow("Tier:", selectedAchievement.getTier()));
 		detailPanel.add(createInfoRow("Points:", String.valueOf(selectedAchievement.getPoints())));
 
@@ -717,7 +689,6 @@ public class CombatAchievementsPanel extends PluginPanel
 
 		detailPanel.add(Box.createVerticalStrut(5));
 
-		// Status
 		JLabel statusLabel = new JLabel();
 		statusLabel.setFont(FontManager.getRunescapeSmallFont());
 		statusLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
