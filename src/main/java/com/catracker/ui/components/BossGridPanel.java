@@ -362,7 +362,7 @@ public class BossGridPanel extends JPanel
 				});
 				break;
 
-			case "Completion %":
+			case "Wiki Completion %":
 				bosses.sort((a, b) -> {
 					double avgA = getAverageCompletionPercent(a, allAchievements);
 					double avgB = getAverageCompletionPercent(b, allAchievements);

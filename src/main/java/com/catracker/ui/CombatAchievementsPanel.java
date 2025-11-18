@@ -732,7 +732,7 @@ public class CombatAchievementsPanel extends PluginPanel
 						filtered.sort((a, b) -> Boolean.compare(b.isCompleted(), a.isCompleted()));
 					}
 					break;
-				case "Completion %":
+				case "Wiki Completion %":
 					filtered.sort((a, b) ->
 					{
 						Double aComp = a.getCompletionPercentage();
