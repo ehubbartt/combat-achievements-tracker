@@ -108,6 +108,7 @@ public class CombatAchievementsPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
+		hasLoadedThisSession = false;
 		log.debug("Combat Achievements Tracker starting up...");
 
 		dataLoader = new CombatAchievementsDataLoader(client, clientThread);
