@@ -131,6 +131,7 @@ public class FilterPanel extends JPanel
 		sortDirectionButton.setBorder(new LineBorder(ColorScheme.MEDIUM_GRAY_COLOR, 1));
 		sortDirectionButton.setFocusPainted(false);
 		sortDirectionButton.setIcon(SORT_UP_ICON);
+		sortDirectionButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 	}
 
 
@@ -156,6 +157,7 @@ public class FilterPanel extends JPanel
 		}
 
 		button.setToolTipText(tier + " Tier");
+		button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		button.addActionListener(e ->
 		{
 			selectedTiers.put(tier, button.isSelected());
@@ -171,13 +173,19 @@ public class FilterPanel extends JPanel
 	{
 		if (button.isSelected())
 		{
-			button.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-			button.setBorder(new LineBorder(getTierColor(tier), 1));
+			Color tierColor = getTierColor(tier);
+			Color tintedBg = new Color(
+				tierColor.getRed() / 4,
+				tierColor.getGreen() / 4,
+				tierColor.getBlue() / 4
+			);
+			button.setBackground(tintedBg);
+			button.setBorder(new LineBorder(tierColor, 1));
 		}
 		else
 		{
 			button.setBackground(new Color(60, 60, 60));
-			button.setBorder(new LineBorder(ColorScheme.MEDIUM_GRAY_COLOR, 1));
+			button.setBorder(new LineBorder(ColorScheme.MEDIUM_GRAY_COLOR, 0));
 		}
 	}
 
