@@ -72,8 +72,16 @@ public class CombatAchievementsPanel extends PluginPanel
 	private final JButton allTasksButton = new JButton("All Tasks");
 	private final JButton trackedTasksButton = new JButton("Tracked");
 	private final JButton bossesButton = new JButton("Bosses");
-	private final JScrollPane contentScrollPane = new JScrollPane();
-	private final JPanel contentContainer = new JPanel();
+
+	// CardLayout for tab switching with scroll preservation
+	private final JPanel cardPanel = new JPanel(new CardLayout());
+	private final JScrollPane allTasksScrollPane = new JScrollPane();
+	private final JScrollPane trackedScrollPane = new JScrollPane();
+	private final JScrollPane bossesScrollPane = new JScrollPane();
+	private final JPanel allTasksContainer = new JPanel();
+	private final JPanel trackedContainer = new JPanel();
+	private final JPanel bossesContainer = new JPanel();
+
 	private final JPanel bossHeaderPanel = new JPanel(new BorderLayout());
 	private final JButton backButton = new JButton();
 	private final JLabel bossTitle = new JLabel();
@@ -105,8 +113,17 @@ public class CombatAchievementsPanel extends PluginPanel
 	private List<CombatAchievement> allAchievements = new ArrayList<>();
 	private List<CombatAchievement> trackedAchievements = new ArrayList<>();
 	private String currentSearchText = "";
-	private final Map<Integer, CombatAchievementPanel> achievementPanels = new HashMap<>();
+	private final Map<Integer, CombatAchievementPanel> allTasksPanels = new HashMap<>();
+	private final Map<Integer, CombatAchievementPanel> trackedPanels = new HashMap<>();
 	private boolean statsAndFiltersVisible = true;
+
+	// Dirty flags to track which tabs need content refresh
+	private boolean allTasksDirty = true;
+	private boolean trackedDirty = true;
+	private boolean bossesDirty = true;
+
+	// Store boss grid scroll position when drilling into a boss
+	private int bossGridScrollPosition = 0;
 
 	private enum ViewMode
 	{
@@ -129,7 +146,7 @@ public class CombatAchievementsPanel extends PluginPanel
 		layoutComponents();
 		setupEventHandlers();
 		loadSampleData();
-		refreshContent();
+		buildAllTabs();
 	}
 
 	private void initializeComponents()
@@ -240,7 +257,10 @@ public class CombatAchievementsPanel extends PluginPanel
 			{
 				selectedBoss = null;
 			}
-			refreshContent();
+			// Mark bosses as dirty so it rebuilds, don't reset scroll
+			// (scroll restoration is handled in refreshContent)
+			bossesDirty = true;
+			refreshContent(false);
 		});
 
 		bossTitle.setFont(FontManager.getRunescapeBoldFont());
@@ -253,17 +273,49 @@ public class CombatAchievementsPanel extends PluginPanel
 
 	private void setupContentContainer()
 	{
-		contentContainer.setLayout(new BoxLayout(contentContainer, BoxLayout.Y_AXIS));
-		contentContainer.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		contentContainer.setBorder(new EmptyBorder(0, 10, 0, 10));
-		contentContainer.setAlignmentX(Component.LEFT_ALIGNMENT);
+		// Setup all tasks container
+		allTasksContainer.setLayout(new BoxLayout(allTasksContainer, BoxLayout.Y_AXIS));
+		allTasksContainer.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		allTasksContainer.setBorder(new EmptyBorder(0, 10, 0, 10));
+		allTasksContainer.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-		contentScrollPane.setViewportView(contentContainer);
-		contentScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-		contentScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-		contentScrollPane.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		contentScrollPane.setBorder(null);
-		contentScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+		allTasksScrollPane.setViewportView(allTasksContainer);
+		allTasksScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		allTasksScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+		allTasksScrollPane.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		allTasksScrollPane.setBorder(null);
+		allTasksScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+		// Setup tracked container
+		trackedContainer.setLayout(new BoxLayout(trackedContainer, BoxLayout.Y_AXIS));
+		trackedContainer.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		trackedContainer.setBorder(new EmptyBorder(0, 10, 0, 10));
+		trackedContainer.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+		trackedScrollPane.setViewportView(trackedContainer);
+		trackedScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		trackedScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+		trackedScrollPane.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		trackedScrollPane.setBorder(null);
+		trackedScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+		// Setup bosses container
+		bossesContainer.setLayout(new BoxLayout(bossesContainer, BoxLayout.Y_AXIS));
+		bossesContainer.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		bossesContainer.setBorder(new EmptyBorder(0, 10, 0, 10));
+		bossesContainer.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+		bossesScrollPane.setViewportView(bossesContainer);
+		bossesScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		bossesScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+		bossesScrollPane.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		bossesScrollPane.setBorder(null);
+		bossesScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+		// Add scroll panes to card panel
+		cardPanel.add(allTasksScrollPane, ViewMode.ALL_TASKS.name());
+		cardPanel.add(trackedScrollPane, ViewMode.TRACKED_TASKS.name());
+		cardPanel.add(bossesScrollPane, ViewMode.BOSSES.name());
 	}
 
 	private void layoutComponents()
@@ -342,7 +394,7 @@ public class CombatAchievementsPanel extends PluginPanel
 		fixedContent.add(bossHeaderPanel);
 
 		add(fixedContent, BorderLayout.NORTH);
-		add(contentScrollPane, BorderLayout.CENTER);
+		add(cardPanel, BorderLayout.CENTER);
 	}
 
 	private void setupEventHandlers()
@@ -361,13 +413,45 @@ public class CombatAchievementsPanel extends PluginPanel
 		styleTabButton(trackedTasksButton, viewMode == ViewMode.TRACKED_TASKS);
 		styleTabButton(bossesButton, viewMode == ViewMode.BOSSES);
 
-		refreshContent();
+		// Show the selected tab using CardLayout
+		CardLayout cl = (CardLayout) cardPanel.getLayout();
+		cl.show(cardPanel, viewMode.name());
+
+		// Only refresh if the tab content is dirty
+		boolean needsRefresh = false;
+		switch (viewMode)
+		{
+			case ALL_TASKS:
+				needsRefresh = allTasksDirty;
+				break;
+			case TRACKED_TASKS:
+				needsRefresh = trackedDirty;
+				break;
+			case BOSSES:
+				needsRefresh = bossesDirty;
+				break;
+		}
+
+		if (needsRefresh)
+		{
+			// Reset scroll to top when first loading a tab's content
+			refreshContent(true);
+		}
+		else
+		{
+			// Still update stats even if content doesn't need refresh
+			updateStats();
+		}
 	}
 
 	private void selectBoss(String bossName)
 	{
+		// Save current scroll position before drilling into boss
+		bossGridScrollPosition = bossesScrollPane.getVerticalScrollBar().getValue();
 		selectedBoss = bossName;
-		refreshContent();
+		// Mark bosses as dirty and reset scroll for the new boss view
+		bossesDirty = true;
+		refreshContent(true);
 	}
 
 	public void updateAchievements(List<CombatAchievement> newAchievements)
@@ -377,14 +461,18 @@ public class CombatAchievementsPanel extends PluginPanel
 		{
 			allAchievements.clear();
 			allAchievements.addAll(newAchievements);
-			achievementPanels.clear();
 			loadTrackedAchievements();
-			refreshContent();
+			// Rebuild all tabs with new data
+			buildAllTabs();
 		});
 	}
 
 	public void refreshContent()
 	{
+		// Mark all tabs as dirty and refresh current view
+		allTasksDirty = true;
+		trackedDirty = true;
+		bossesDirty = true;
 		refreshContent(true);
 	}
 
@@ -392,9 +480,7 @@ public class CombatAchievementsPanel extends PluginPanel
 	{
 		SwingUtilities.invokeLater(() ->
 		{
-			contentContainer.removeAll();
-			achievementPanels.clear();
-
+			// Update boss header visibility
 			if (selectedAchievement != null)
 			{
 				bossTitle.setText(selectedAchievement.getName());
@@ -410,48 +496,155 @@ public class CombatAchievementsPanel extends PluginPanel
 				bossHeaderPanel.setVisible(false);
 			}
 
-			if (selectedAchievement != null)
+			// Get the current container and scroll pane based on view mode
+			JPanel currentContainer;
+			JScrollPane currentScrollPane;
+			switch (currentViewMode)
 			{
-				displayAchievementDetail();
+				case ALL_TASKS:
+					currentContainer = allTasksContainer;
+					currentScrollPane = allTasksScrollPane;
+					break;
+				case TRACKED_TASKS:
+					currentContainer = trackedContainer;
+					currentScrollPane = trackedScrollPane;
+					break;
+				case BOSSES:
+					currentContainer = bossesContainer;
+					currentScrollPane = bossesScrollPane;
+					break;
+				default:
+					currentContainer = allTasksContainer;
+					currentScrollPane = allTasksScrollPane;
 			}
-			else
+
+			// Only rebuild if the tab is dirty
+			boolean isDirty = false;
+			switch (currentViewMode)
 			{
-				switch (currentViewMode)
+				case ALL_TASKS:
+					isDirty = allTasksDirty;
+					break;
+				case TRACKED_TASKS:
+					isDirty = trackedDirty;
+					break;
+				case BOSSES:
+					isDirty = bossesDirty;
+					break;
+			}
+
+			if (isDirty || selectedAchievement != null)
+			{
+				currentContainer.removeAll();
+
+				if (selectedAchievement != null)
 				{
-					case BOSSES:
-						if (selectedBoss == null)
-						{
-							displayBossGrid();
-						}
-						else
-						{
-							displayBossAchievements();
-						}
-						break;
-					case ALL_TASKS:
-					case TRACKED_TASKS:
-						displayAchievementsList();
-						break;
+					displayAchievementDetail(currentContainer);
 				}
+				else
+				{
+					switch (currentViewMode)
+					{
+						case BOSSES:
+							if (selectedBoss == null)
+							{
+								displayBossGrid(currentContainer);
+							}
+							else
+							{
+								displayBossAchievements(currentContainer);
+							}
+							bossesDirty = false;
+							break;
+						case ALL_TASKS:
+							displayAllTasksList(currentContainer);
+							allTasksDirty = false;
+							break;
+						case TRACKED_TASKS:
+							displayTrackedList(currentContainer);
+							trackedDirty = false;
+							break;
+					}
+				}
+
+				currentContainer.revalidate();
+				currentContainer.repaint();
+
+				// Set scroll position after revalidate using double invokeLater
+				// to ensure layout is fully complete
+				final JScrollPane scrollPane = currentScrollPane;
+				final boolean isReturningToBossGrid = (currentViewMode == ViewMode.BOSSES && selectedBoss == null && !resetScrollPosition);
+
+				SwingUtilities.invokeLater(() ->
+					SwingUtilities.invokeLater(() ->
+					{
+						if (isReturningToBossGrid)
+						{
+							// Restore saved scroll position when returning to boss grid
+							scrollPane.getVerticalScrollBar().setValue(bossGridScrollPosition);
+						}
+						else if (resetScrollPosition)
+						{
+							scrollPane.getVerticalScrollBar().setValue(0);
+						}
+					})
+				);
 			}
 
 			updateStats();
-			contentContainer.revalidate();
-			contentContainer.repaint();
-
-			if (resetScrollPosition)
-			{
-				SwingUtilities.invokeLater(() ->
-				{
-					contentScrollPane.getVerticalScrollBar().setValue(0);
-				});
-			}
 		});
 	}
 
-	private void displayBossGrid()
+	private void buildAllTabs()
 	{
-		contentContainer.add(bossGridPanel);
+		SwingUtilities.invokeLater(() ->
+		{
+			// Build All Tasks tab
+			allTasksContainer.removeAll();
+			allTasksPanels.clear();
+			List<CombatAchievement> allFiltered = getFilteredAchievements(allAchievements);
+			displayAchievementPanels(allTasksContainer, allFiltered, "No achievements match current filters", allTasksPanels);
+			allTasksContainer.revalidate();
+			allTasksContainer.repaint();
+			allTasksDirty = false;
+
+			// Build Tracked tab
+			trackedContainer.removeAll();
+			trackedPanels.clear();
+			List<CombatAchievement> trackedFiltered = getFilteredAchievements(trackedAchievements);
+			displayAchievementPanels(trackedContainer, trackedFiltered, "No tracked achievements match current filters", trackedPanels);
+			trackedContainer.revalidate();
+			trackedContainer.repaint();
+			trackedDirty = false;
+
+			// Build Bosses tab
+			bossesContainer.removeAll();
+			bossesContainer.add(bossGridPanel);
+			String statusFilter = filterPanel.getSelectedStatusFilter();
+			String typeFilter = filterPanel.getSelectedTypeFilter();
+			String sortOption = filterPanel.getSelectedSortFilter();
+			boolean sortAscending = filterPanel.isSortAscending();
+			Map<String, Boolean> selectedTiers = filterPanel.getSelectedTiers();
+			bossGridPanel.displayBossGrid(allAchievements, currentSearchText, statusFilter, typeFilter, sortOption, sortAscending, selectedTiers);
+			bossesContainer.revalidate();
+			bossesContainer.repaint();
+			bossesDirty = false;
+
+			updateStats();
+
+			// Set scroll positions after layout is complete
+			SwingUtilities.invokeLater(() ->
+			{
+				allTasksScrollPane.getVerticalScrollBar().setValue(0);
+				trackedScrollPane.getVerticalScrollBar().setValue(0);
+				bossesScrollPane.getVerticalScrollBar().setValue(0);
+			});
+		});
+	}
+
+	private void displayBossGrid(JPanel container)
+	{
+		container.add(bossGridPanel);
 		String statusFilter = filterPanel.getSelectedStatusFilter();
 		String typeFilter = filterPanel.getSelectedTypeFilter();
 		String sortOption = filterPanel.getSelectedSortFilter();
@@ -460,11 +653,11 @@ public class CombatAchievementsPanel extends PluginPanel
 		bossGridPanel.displayBossGrid(allAchievements, currentSearchText, statusFilter, typeFilter, sortOption, sortAscending, selectedTiers);
 	}
 
-	private void displayBossAchievements()
+	private void displayBossAchievements(JPanel container)
 	{
 		if (selectedBoss == null)
 		{
-			displayBossGrid();
+			displayBossGrid(container);
 			return;
 		}
 
@@ -473,10 +666,10 @@ public class CombatAchievementsPanel extends PluginPanel
 			.collect(Collectors.toList());
 
 		List<CombatAchievement> filteredAchievements = getFilteredAchievements(bossAchievements);
-		displayAchievementPanels(filteredAchievements, "No achievements found for " + selectedBoss + " given current filter settings");
+		displayAchievementPanels(container, filteredAchievements, "No achievements found for " + selectedBoss + " given current filter settings", null);
 	}
 
-	private void displayAchievementDetail()
+	private void displayAchievementDetail(JPanel container)
 	{
 		if (selectedAchievement == null)
 		{
@@ -597,7 +790,7 @@ public class CombatAchievementsPanel extends PluginPanel
 		// Add detailPanel to the top (NORTH) of outerPanel
 		outerPanel.add(detailPanel, BorderLayout.NORTH);
 
-		contentContainer.add(outerPanel);
+		container.add(outerPanel);
 	}
 
 	private void openWikiForAchievement(CombatAchievement achievement)
@@ -632,19 +825,21 @@ public class CombatAchievementsPanel extends PluginPanel
 		return row;
 	}
 
-	private void displayAchievementsList()
+	private void displayAllTasksList(JPanel container)
 	{
-		List<CombatAchievement> baseList = currentViewMode == ViewMode.TRACKED_TASKS ? trackedAchievements : allAchievements;
-		List<CombatAchievement> filteredAchievements = getFilteredAchievements(baseList);
-
-		String emptyMessage = currentViewMode == ViewMode.TRACKED_TASKS ?
-			"No tracked achievements match current filters" :
-			"No achievements match current filters";
-
-		displayAchievementPanels(filteredAchievements, emptyMessage);
+		List<CombatAchievement> filteredAchievements = getFilteredAchievements(allAchievements);
+		allTasksPanels.clear();
+		displayAchievementPanels(container, filteredAchievements, "No achievements match current filters", allTasksPanels);
 	}
 
-	private void displayAchievementPanels(List<CombatAchievement> achievements, String emptyMessage)
+	private void displayTrackedList(JPanel container)
+	{
+		List<CombatAchievement> filteredAchievements = getFilteredAchievements(trackedAchievements);
+		trackedPanels.clear();
+		displayAchievementPanels(container, filteredAchievements, "No tracked achievements match current filters", trackedPanels);
+	}
+
+	private void displayAchievementPanels(JPanel container, List<CombatAchievement> achievements, String emptyMessage, Map<Integer, CombatAchievementPanel> panelMap)
 	{
 		if (achievements.isEmpty())
 		{
@@ -658,7 +853,7 @@ public class CombatAchievementsPanel extends PluginPanel
 			emptyLabel.setLineWrap(true);
 			emptyLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 			emptyLabel.setBorder(new EmptyBorder(20, 10, 20, 10));
-			contentContainer.add(emptyLabel);
+			container.add(emptyLabel);
 		}
 		else
 		{
@@ -667,11 +862,14 @@ public class CombatAchievementsPanel extends PluginPanel
 				try
 				{
 					CombatAchievementPanel panel = new CombatAchievementPanel(plugin, achievement);
-					achievementPanels.put(achievement.getId(), panel);
+					if (panelMap != null)
+					{
+						panelMap.put(achievement.getId(), panel);
+					}
 
 					panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, panel.getPreferredSize().height));
 					panel.setAlignmentX(Component.CENTER_ALIGNMENT);
-					contentContainer.add(panel);
+					container.add(panel);
 				}
 				catch (Exception e)
 				{
@@ -959,11 +1157,16 @@ public class CombatAchievementsPanel extends PluginPanel
 		{
 			trackedAchievements.add(achievement);
 			achievement.setTracked(true);
-			CombatAchievementPanel panel = achievementPanels.get(achievement.getId());
+
+			// Refresh the panel in the current view
+			CombatAchievementPanel panel = allTasksPanels.get(achievement.getId());
 			if (panel != null)
 			{
 				panel.refresh();
 			}
+
+			// Mark tracked tab as dirty since we added an item
+			trackedDirty = true;
 
 			updateStatsOnly();
 			saveTrackedAchievements();
@@ -976,10 +1179,17 @@ public class CombatAchievementsPanel extends PluginPanel
 		if (trackedAchievements.remove(achievement))
 		{
 			achievement.setTracked(false);
-			CombatAchievementPanel panel = achievementPanels.get(achievement.getId());
-			if (panel != null)
+
+			// Refresh panels in both views if they exist
+			CombatAchievementPanel allTasksPanel = allTasksPanels.get(achievement.getId());
+			if (allTasksPanel != null)
 			{
-				panel.refresh();
+				allTasksPanel.refresh();
+			}
+			CombatAchievementPanel trackedPanel = trackedPanels.get(achievement.getId());
+			if (trackedPanel != null)
+			{
+				trackedPanel.refresh();
 			}
 
 			updateStatsOnly();
@@ -987,7 +1197,14 @@ public class CombatAchievementsPanel extends PluginPanel
 
 			if (currentViewMode == ViewMode.TRACKED_TASKS)
 			{
+				// Mark as dirty and refresh to remove the item from view
+				trackedDirty = true;
 				refreshContent(false);
+			}
+			else
+			{
+				// Mark tracked tab as dirty for when user switches to it
+				trackedDirty = true;
 			}
 		}
 	}
@@ -1056,6 +1273,13 @@ public class CombatAchievementsPanel extends PluginPanel
 			styleTabButton(allTasksButton, false);
 			styleTabButton(trackedTasksButton, false);
 			styleTabButton(bossesButton, true);
+
+			// Show the bosses card
+			CardLayout cl = (CardLayout) cardPanel.getLayout();
+			cl.show(cardPanel, ViewMode.BOSSES.name());
+
+			// Mark bosses as dirty since we're selecting a specific boss
+			bossesDirty = true;
 
 			// Refresh content to show the boss achievements
 			refreshContent();
