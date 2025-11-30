@@ -156,7 +156,7 @@ public class CombatAchievementsPanel extends PluginPanel
 		setupSearchBar();
 		setupContentContainer();
 
-		filterPanel.setRefreshCallback((v) -> refreshContent());
+		filterPanel.setRefreshCallback((v) -> refreshContentPreservingScroll());
 		bossGridPanel.setBossClickCallback(this::selectBoss);
 	}
 
@@ -387,9 +387,7 @@ public class CombatAchievementsPanel extends PluginPanel
 		styleTabButton(trackedTasksButton, viewMode == ViewMode.TRACKED_TASKS);
 		styleTabButton(bossesButton, viewMode == ViewMode.BOSSES);
 
-		CardLayout cl = (CardLayout) cardPanel.getLayout();
-		cl.show(cardPanel, viewMode.name());
-
+		// Check if we need to rebuild before showing (to prevent flicker)
 		boolean needsRefresh = false;
 		switch (viewMode)
 		{
@@ -406,11 +404,65 @@ public class CombatAchievementsPanel extends PluginPanel
 
 		if (needsRefresh)
 		{
-			refreshContent(true);
+			// Rebuild content BEFORE showing the card to prevent flicker
+			rebuildTabContentSync(viewMode);
 		}
-		else
+
+		// NOW show the card (content is already built if it was dirty)
+		CardLayout cl = (CardLayout) cardPanel.getLayout();
+		cl.show(cardPanel, viewMode.name());
+
+		// Update stats (always needed)
+		updateStats();
+	}
+
+	/**
+	 * Synchronously rebuilds content for a specific tab.
+	 * Called before showing a tab to prevent flicker.
+	 * Scrolls to top after rebuilding.
+	 */
+	private void rebuildTabContentSync(ViewMode viewMode)
+	{
+		switch (viewMode)
 		{
-			updateStats();
+			case ALL_TASKS:
+				allTasksContainer.removeAll();
+				allTasksPanels.clear();
+				List<CombatAchievement> allFiltered = getFilteredAchievements(allAchievements);
+				displayAchievementPanels(allTasksContainer, allFiltered, "No achievements match current filters", allTasksPanels);
+				allTasksContainer.revalidate();
+				allTasksContainer.repaint();
+				allTasksDirty = false;
+				allTasksScrollPane.getVerticalScrollBar().setValue(0);
+				break;
+
+			case TRACKED_TASKS:
+				trackedContainer.removeAll();
+				trackedPanels.clear();
+				List<CombatAchievement> trackedFiltered = getFilteredAchievements(trackedAchievements);
+				displayAchievementPanels(trackedContainer, trackedFiltered, "No tracked achievements match current filters", trackedPanels);
+				trackedContainer.revalidate();
+				trackedContainer.repaint();
+				trackedDirty = false;
+				trackedScrollPane.getVerticalScrollBar().setValue(0);
+				break;
+
+			case BOSSES:
+				bossesContainer.removeAll();
+				if (selectedBoss == null)
+				{
+					displayBossGrid(bossesContainer);
+				}
+				else
+				{
+					displayBossAchievements(bossesContainer);
+				}
+				bossesContainer.revalidate();
+				bossesContainer.repaint();
+				bossesDirty = false;
+				bossesScrollPane.validate();
+				bossesScrollPane.getVerticalScrollBar().setValue(0);
+				break;
 		}
 	}
 
@@ -440,6 +492,46 @@ public class CombatAchievementsPanel extends PluginPanel
 		trackedDirty = true;
 		bossesDirty = true;
 		refreshContent(true);
+	}
+
+	/**
+	 * Refreshes content when filters change.
+	 * Marks all tabs dirty and rebuilds them, scrolling to top.
+	 * Rebuilds inactive tabs in background so there's no flicker when switching.
+	 */
+	public void refreshContentPreservingScroll()
+	{
+		allTasksDirty = true;
+		trackedDirty = true;
+		bossesDirty = true;
+		refreshContent(true);
+
+		// Rebuild inactive tabs in background so there's no flicker when switching
+		rebuildInactiveTabs();
+	}
+
+	/**
+	 * Rebuilds tabs that are not currently visible in the background.
+	 * This prevents flicker when user switches tabs after a filter change.
+	 */
+	private void rebuildInactiveTabs()
+	{
+		SwingUtilities.invokeLater(() ->
+		{
+			// Rebuild tabs that are NOT currently visible and are dirty
+			if (currentViewMode != ViewMode.ALL_TASKS && allTasksDirty)
+			{
+				rebuildTabContentSync(ViewMode.ALL_TASKS);
+			}
+			if (currentViewMode != ViewMode.TRACKED_TASKS && trackedDirty)
+			{
+				rebuildTabContentSync(ViewMode.TRACKED_TASKS);
+			}
+			if (currentViewMode != ViewMode.BOSSES && bossesDirty)
+			{
+				rebuildTabContentSync(ViewMode.BOSSES);
+			}
+		});
 	}
 
 	private void refreshContent(boolean resetScrollPosition)
@@ -535,7 +627,7 @@ public class CombatAchievementsPanel extends PluginPanel
 						{
 							scrollPane.getVerticalScrollBar().setValue(bossGridScrollPosition);
 						}
-						else if (resetScrollPosition)
+						else
 						{
 							scrollPane.getVerticalScrollBar().setValue(0);
 						}
