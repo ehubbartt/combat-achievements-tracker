@@ -73,7 +73,6 @@ public class CombatAchievementsPanel extends PluginPanel
 	private final JButton trackedTasksButton = new JButton("Tracked");
 	private final JButton bossesButton = new JButton("Bosses");
 
-	// CardLayout for tab switching with scroll preservation
 	private final JPanel cardPanel = new JPanel(new CardLayout());
 	private final JScrollPane allTasksScrollPane = new JScrollPane();
 	private final JScrollPane trackedScrollPane = new JScrollPane();
@@ -117,12 +116,10 @@ public class CombatAchievementsPanel extends PluginPanel
 	private final Map<Integer, CombatAchievementPanel> trackedPanels = new HashMap<>();
 	private boolean statsAndFiltersVisible = true;
 
-	// Dirty flags to track which tabs need content refresh
 	private boolean allTasksDirty = true;
 	private boolean trackedDirty = true;
 	private boolean bossesDirty = true;
 
-	// Store boss grid scroll position when drilling into a boss
 	private int bossGridScrollPosition = 0;
 
 	private enum ViewMode
@@ -156,7 +153,7 @@ public class CombatAchievementsPanel extends PluginPanel
 		setupSearchBar();
 		setupContentContainer();
 
-		filterPanel.setRefreshCallback((v) -> refreshContentPreservingScroll());
+		filterPanel.setRefreshCallback((v) -> refreshContentWithBackgroundRebuild());
 		bossGridPanel.setBossClickCallback(this::selectBoss);
 	}
 
@@ -433,7 +430,7 @@ public class CombatAchievementsPanel extends PluginPanel
 				allTasksContainer.revalidate();
 				allTasksContainer.repaint();
 				allTasksDirty = false;
-				allTasksScrollPane.getVerticalScrollBar().setValue(0);
+				SwingUtilities.invokeLater(() -> allTasksScrollPane.getVerticalScrollBar().setValue(0));
 				break;
 
 			case TRACKED_TASKS:
@@ -444,7 +441,7 @@ public class CombatAchievementsPanel extends PluginPanel
 				trackedContainer.revalidate();
 				trackedContainer.repaint();
 				trackedDirty = false;
-				trackedScrollPane.getVerticalScrollBar().setValue(0);
+				SwingUtilities.invokeLater(() -> trackedScrollPane.getVerticalScrollBar().setValue(0));
 				break;
 
 			case BOSSES:
@@ -460,8 +457,7 @@ public class CombatAchievementsPanel extends PluginPanel
 				bossesContainer.revalidate();
 				bossesContainer.repaint();
 				bossesDirty = false;
-				bossesScrollPane.validate();
-				bossesScrollPane.getVerticalScrollBar().setValue(0);
+				SwingUtilities.invokeLater(() -> bossesScrollPane.getVerticalScrollBar().setValue(0));
 				break;
 		}
 	}
@@ -494,12 +490,7 @@ public class CombatAchievementsPanel extends PluginPanel
 		refreshContent(true);
 	}
 
-	/**
-	 * Refreshes content when filters change.
-	 * Marks all tabs dirty and rebuilds them, scrolling to top.
-	 * Rebuilds inactive tabs in background so there's no flicker when switching.
-	 */
-	public void refreshContentPreservingScroll()
+	public void refreshContentWithBackgroundRebuild()
 	{
 		allTasksDirty = true;
 		trackedDirty = true;
@@ -553,16 +544,11 @@ public class CombatAchievementsPanel extends PluginPanel
 				bossHeaderPanel.setVisible(false);
 			}
 
-			JPanel currentContainer;
-			JScrollPane currentScrollPane;
-			boolean isDirty;
+			JPanel currentContainer = allTasksContainer;
+			JScrollPane currentScrollPane = allTasksScrollPane;
+			boolean isDirty = allTasksDirty;
 			switch (currentViewMode)
 			{
-				case ALL_TASKS:
-					currentContainer = allTasksContainer;
-					currentScrollPane = allTasksScrollPane;
-					isDirty = allTasksDirty;
-					break;
 				case TRACKED_TASKS:
 					currentContainer = trackedContainer;
 					currentScrollPane = trackedScrollPane;
@@ -573,10 +559,6 @@ public class CombatAchievementsPanel extends PluginPanel
 					currentScrollPane = bossesScrollPane;
 					isDirty = bossesDirty;
 					break;
-				default:
-					currentContainer = allTasksContainer;
-					currentScrollPane = allTasksScrollPane;
-					isDirty = allTasksDirty;
 			}
 
 			if (isDirty || selectedAchievement != null)
