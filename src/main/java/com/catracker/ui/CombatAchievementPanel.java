@@ -99,9 +99,9 @@ public class CombatAchievementPanel extends JPanel
 		topRightPanel.setLayout(new BoxLayout(topRightPanel, BoxLayout.X_AXIS));
 		topRightPanel.setBackground(getBackgroundColor());
 
-		trackButton.setPreferredSize(new Dimension(12, 12));
-		trackButton.setMaximumSize(new Dimension(12, 12));
-		trackButton.setMinimumSize(new Dimension(12, 12));
+		trackButton.setPreferredSize(new Dimension(20, 20));
+		trackButton.setMaximumSize(new Dimension(20, 20));
+		trackButton.setMinimumSize(new Dimension(20, 20));
 		updateTrackButton();
 		SwingUtil.removeButtonDecorations(trackButton);
 
