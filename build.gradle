@@ -3,7 +3,6 @@ plugins {
 }
 
 repositories {
-    mavenLocal()
     maven {
         url = 'https://repo.runelite.net'
         content {
@@ -11,6 +10,7 @@ repositories {
         }
     }
     mavenCentral()
+    mavenLocal()
 }
 
 def runeLiteVersion = 'latest.release'
@@ -27,7 +27,7 @@ dependencies {
 }
 
 group = 'com.catracker'
-version = '1.2.0'
+version = '1.2.1'
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'

@@ -76,7 +76,8 @@ public class CombatAchievementsDataLoader
 		VarPlayerID.CA_TASK_COMPLETED_12, VarPlayerID.CA_TASK_COMPLETED_13,
 		VarPlayerID.CA_TASK_COMPLETED_14, VarPlayerID.CA_TASK_COMPLETED_15,
 		VarPlayerID.CA_TASK_COMPLETED_16, VarPlayerID.CA_TASK_COMPLETED_17,
-		VarPlayerID.CA_TASK_COMPLETED_18, VarPlayerID.CA_TASK_COMPLETED_19
+		VarPlayerID.CA_TASK_COMPLETED_18, VarPlayerID.CA_TASK_COMPLETED_19,
+		VarPlayerID.CA_TASK_COMPLETED_20
 	};
 
 	public CombatAchievementsDataLoader(Client client, ClientThread clientThread)
@@ -166,11 +167,17 @@ public class CombatAchievementsDataLoader
 						{
 							int varpIndex = id / 32;
 							int bitIndex = id % 32;
-							if (varpIndex < VARP_IDS.length)
-							{
-								int varpValue = client.getVarpValue(VARP_IDS[varpIndex]);
-								completed = (varpValue & (1 << bitIndex)) != 0;
-							}
+							int varpValue = client.getVarpValue(VARP_IDS[varpIndex]);
+							completed = (varpValue & (1 << bitIndex)) != 0;
+						}
+						else
+						{
+							// Task id falls outside the varps we know about, so its completion
+							// bit is unreadable and it would silently render as incomplete.
+							// Jagex adds a new CA_TASK_COMPLETED_n varp when tasks overflow;
+							// add it to VARP_IDS when this fires.
+							log.warn("Task id {} ({}) exceeds known varp capacity {} - completion cannot be read",
+								id, name, VARP_IDS.length * 32);
 						}
 
 						int points = getPointsForTier(tierName);
